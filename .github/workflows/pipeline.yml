@@ -1,69 +1,69 @@
-name: Google Photos to Archive.org
+  name: Google Photos to Archive.org
 
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: "10 */6 * * *"
+  on:
+    workflow_dispatch:
+    schedule:
+      - cron: "10 */6 * * *"
 
-permissions:
-  contents: write
+  permissions:
+    contents: write
 
-concurrency:
-  group: gp-archive-pipeline
-  cancel-in-progress: false
+  concurrency:
+    group: gp-archive-pipeline
+    cancel-in-progress: false
 
-jobs:
-  process:
-    runs-on: ubuntu-latest
-    timeout-minutes: 360
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+  jobs:
+    process:
+      runs-on: ubuntu-latest
+      timeout-minutes: 360
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+        - name: Setup Python
+          uses: actions/setup-python@v5
+          with:
+            python-version: "3.11"
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
-          python -m pip install --upgrade pip
-          pip install yt-dlp internetarchive
+        - name: Install dependencies
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+            python -m pip install --upgrade pip
+            pip install yt-dlp internetarchive
 
-      - name: Prepare credentials
-        env:
-          IA_ACCESS_KEY: ${{ secrets.IA_ACCESS_KEY }}
-          IA_SECRET_KEY: ${{ secrets.IA_SECRET_KEY }}
-          GPHOTOS_COOKIES: ${{ secrets.GPHOTOS_COOKIES }}
-        run: |
-          if [ -z "${IA_ACCESS_KEY}" ] || [ -z "${IA_SECRET_KEY}" ]; then
-            echo "IA_ACCESS_KEY / IA_SECRET_KEY missing."
-            exit 1
-          fi
+        - name: Prepare credentials
+          env:
+            IA_ACCESS_KEY: ${{ secrets.IA_ACCESS_KEY }}
+            IA_SECRET_KEY: ${{ secrets.IA_SECRET_KEY }}
+            GPHOTOS_COOKIES: ${{ secrets.GPHOTOS_COOKIES }}
+          run: |
+            if [ -z "${IA_ACCESS_KEY}" ] || [ -z "${IA_SECRET_KEY}" ]; then
+              echo "IA_ACCESS_KEY / IA_SECRET_KEY missing."
+              exit 1
+            fi
 
-          mkdir -p ~/.config
-          {
-            echo "[s3]"
-            echo "access = ${IA_ACCESS_KEY}"
-            echo "secret = ${IA_SECRET_KEY}"
-          } > ~/.config/ia.ini
+            mkdir -p ~/.config
+            {
+              echo "[s3]"
+              echo "access = ${IA_ACCESS_KEY}"
+              echo "secret = ${IA_SECRET_KEY}"
+            } > ~/.config/ia.ini
 
-          printf "%s" "${GPHOTOS_COOKIES}" > cookies.txt
+            printf "%s" "${GPHOTOS_COOKIES}" > cookies.txt
 
-      - name: Run pipeline
-        run: bash scripts/process.sh
+        - name: Run pipeline
+          run: bash scripts/process.sh
 
-      - name: Commit processed state
-        run: |
-          if git diff --quiet processed.txt; then
-            echo "No processed changes."
-            exit 0
-          fi
+        - name: Commit processed state
+          run: |
+            if git diff --quiet processed.txt; then
+              echo "No processed changes."
+              exit 0
+            fi
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add processed.txt
-          git commit -m "chore: update processed links"
-          git push
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add processed.txt
+            git commit -m "chore: update processed links"
+            git push
