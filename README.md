@@ -1,10 +1,11 @@
 # Google Photos -> Archive.org -> Social Automations
 
-Is repo me 3 automations hain:
+Is repo me 4 automations hain:
 
 1. Google Photos Picker se videos uthao, compress karo, Archive.org upload karo  
 2. Archive.org se full + short banao aur YouTube par post karo  
 3. Archive.org/external links se videos process karo aur PostForMe ke zariye multiple social accounts par schedule/post karo
+4. Whisper CPU transcription workflow (GitHub hosted ya self-hosted runner)
 
 ## Files
 
@@ -12,9 +13,11 @@ Is repo me 3 automations hain:
 .github/workflows/pipeline.yml
 .github/workflows/social-publish.yml
 .github/workflows/archive-postforme.yml
+.github/workflows/whisper-cpu.yml
 scripts/picker_pipeline.py
 scripts/social_post_pipeline.py
 scripts/archive_to_postforme.py
+scripts/whisper_transcribe.py
 automations/postforme_automations.json
 automations/external_links.json
 processed.txt
@@ -132,4 +135,24 @@ Example external item:
 - PostForMe multi-account setup ke liye pehle `run_mode=list_accounts` chala ke account IDs note karein.
 - External links ke liye `yt-dlp` workflow me auto install hota hai.
 - Agar aap ne secret chat me share kiya hai to security ke liye rotate karna behtar hai.
+
+## Flow D: Whisper CPU (Self-hosted / GitHub-hosted)
+
+Workflow: `Whisper CPU Transcription`
+
+### Inputs (important)
+
+- `runner_preference`: `self-hosted` ya `github-hosted`
+- `self_hosted_label`: default `whisper-cpu` (self-hosted ke liye)
+- `source_type`: `archive` ya `url`
+- `archive_identifier` (archive mode)
+- `source_url` (url mode)
+- `whisper_model`: `base` (ya tiny/small/medium/large-v3)
+- `whisper_language`: `auto` ya language code
+- `output_format`: `all`/`txt`/`srt`/`vtt`/`json`
+
+### Output
+
+- Transcripts artifact ke taur par upload hotay hain.
+- Optional: `commit_to_repo=true` karke transcripts repo me bhi commit kar sakte hain.
 

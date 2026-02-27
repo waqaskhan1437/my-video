@@ -1,0 +1,251 @@
+name: Whisper CPU Transcription
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner_preference:
+        description: "Where to run Whisper"
+        required: false
+        type: choice
+        default: "self-hosted"
+        options:
+          - "self-hosted"
+          - "github-hosted"
+      self_hosted_label:
+        description: "Runner label used with self-hosted (in addition to self-hosted)"
+        required: false
+        default: "whisper-cpu"
+      source_type:
+        description: "archive (archive.org item) or url (external)"
+        required: false
+        type: choice
+        default: "archive"
+        options:
+          - "archive"
+          - "url"
+      archive_identifier:
+        description: "Archive item id (required for source_type=archive)"
+        required: false
+        default: ""
+      archive_filename:
+        description: "Optional exact file name inside archive item"
+        required: false
+        default: ""
+      source_url:
+        description: "HTTP/HTTPS media/page URL (required for source_type=url)"
+        required: false
+        default: ""
+      whisper_model:
+        description: "faster-whisper model (tiny/base/small/medium/large-v3)"
+        required: false
+        default: "base"
+      whisper_language:
+        description: "Language code or auto"
+        required: false
+        default: "auto"
+      whisper_task:
+        description: "transcribe or translate"
+        required: false
+        type: choice
+        default: "transcribe"
+        options:
+          - "transcribe"
+          - "translate"
+      compute_type:
+        description: "CPU compute type"
+        required: false
+        type: choice
+        default: "int8"
+        options:
+          - "int8"
+          - "int8_float16"
+          - "float32"
+      output_format:
+        description: "all/txt/srt/vtt/json"
+        required: false
+        type: choice
+        default: "all"
+        options:
+          - "all"
+          - "txt"
+          - "srt"
+          - "vtt"
+          - "json"
+      max_duration_seconds:
+        description: "Optional trim duration, 0 means full file"
+        required: false
+        default: "0"
+      save_artifact:
+        description: "Upload transcript output as workflow artifact"
+        required: false
+        type: choice
+        default: "true"
+        options:
+          - "true"
+          - "false"
+      commit_to_repo:
+        description: "Commit transcript folder to repo"
+        required: false
+        type: choice
+        default: "false"
+        options:
+          - "false"
+          - "true"
+      transcripts_dir:
+        description: "Target folder when commit_to_repo=true"
+        required: false
+        default: "transcripts"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: whisper-cpu-transcription
+  cancel-in-progress: false
+
+jobs:
+  hosted:
+    if: ${{ inputs.runner_preference != 'self-hosted' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --upgrade pip
+          pip install faster-whisper requests yt-dlp
+
+      - name: Run Whisper transcription
+        id: whisper
+        env:
+          SOURCE_TYPE: ${{ inputs.source_type || 'archive' }}
+          ARCHIVE_IDENTIFIER: ${{ inputs.archive_identifier || '' }}
+          ARCHIVE_FILENAME: ${{ inputs.archive_filename || '' }}
+          SOURCE_URL: ${{ inputs.source_url || '' }}
+          WHISPER_MODEL: ${{ inputs.whisper_model || 'base' }}
+          WHISPER_LANGUAGE: ${{ inputs.whisper_language || 'auto' }}
+          WHISPER_TASK: ${{ inputs.whisper_task || 'transcribe' }}
+          WHISPER_COMPUTE_TYPE: ${{ inputs.compute_type || 'int8' }}
+          OUTPUT_FORMAT: ${{ inputs.output_format || 'all' }}
+          MAX_DURATION_SECONDS: ${{ inputs.max_duration_seconds || '0' }}
+          WHISPER_OUTPUT_DIR: tmp/whisper/output
+          WHISPER_RUN_KEY: run_${{ github.run_id }}_${{ github.run_attempt }}
+        run: python scripts/whisper_transcribe.py
+
+      - name: Upload transcript artifact
+        if: ${{ inputs.save_artifact == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: whisper-output-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.whisper.outputs.output_dir }}
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Commit transcript output
+        if: ${{ inputs.commit_to_repo == 'true' }}
+        run: |
+          src="${{ steps.whisper.outputs.output_dir }}"
+          if [ ! -d "${src}" ]; then
+            echo "No transcript output dir found: ${src}"
+            exit 1
+          fi
+          dest_root="${{ inputs.transcripts_dir || 'transcripts' }}"
+          mkdir -p "${dest_root}"
+          dir_name="$(basename "${src}")"
+          cp -R "${src}" "${dest_root}/${dir_name}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${dest_root}/${dir_name}"
+          if git diff --cached --quiet; then
+            echo "No transcript changes to commit."
+            exit 0
+          fi
+          git commit -m "chore: add whisper transcript ${dir_name}"
+          git push
+
+  self_hosted:
+    if: ${{ inputs.runner_preference == 'self-hosted' }}
+    runs-on:
+      - self-hosted
+      - ${{ inputs.self_hosted_label }}
+    timeout-minutes: 360
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check ffmpeg
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            echo "ffmpeg is required on self-hosted runner."
+            echo "Install ffmpeg and retry."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install faster-whisper requests yt-dlp
+
+      - name: Run Whisper transcription
+        id: whisper
+        env:
+          SOURCE_TYPE: ${{ inputs.source_type || 'archive' }}
+          ARCHIVE_IDENTIFIER: ${{ inputs.archive_identifier || '' }}
+          ARCHIVE_FILENAME: ${{ inputs.archive_filename || '' }}
+          SOURCE_URL: ${{ inputs.source_url || '' }}
+          WHISPER_MODEL: ${{ inputs.whisper_model || 'base' }}
+          WHISPER_LANGUAGE: ${{ inputs.whisper_language || 'auto' }}
+          WHISPER_TASK: ${{ inputs.whisper_task || 'transcribe' }}
+          WHISPER_COMPUTE_TYPE: ${{ inputs.compute_type || 'int8' }}
+          OUTPUT_FORMAT: ${{ inputs.output_format || 'all' }}
+          MAX_DURATION_SECONDS: ${{ inputs.max_duration_seconds || '0' }}
+          WHISPER_OUTPUT_DIR: tmp/whisper/output
+          WHISPER_RUN_KEY: run_${{ github.run_id }}_${{ github.run_attempt }}
+        run: python scripts/whisper_transcribe.py
+
+      - name: Upload transcript artifact
+        if: ${{ inputs.save_artifact == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: whisper-output-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.whisper.outputs.output_dir }}
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Commit transcript output
+        if: ${{ inputs.commit_to_repo == 'true' }}
+        run: |
+          src="${{ steps.whisper.outputs.output_dir }}"
+          if [ ! -d "${src}" ]; then
+            echo "No transcript output dir found: ${src}"
+            exit 1
+          fi
+          dest_root="${{ inputs.transcripts_dir || 'transcripts' }}"
+          mkdir -p "${dest_root}"
+          dir_name="$(basename "${src}")"
+          cp -R "${src}" "${dest_root}/${dir_name}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${dest_root}/${dir_name}"
+          if git diff --cached --quiet; then
+            echo "No transcript changes to commit."
+            exit 0
+          fi
+          git commit -m "chore: add whisper transcript ${dir_name}"
+          git push
