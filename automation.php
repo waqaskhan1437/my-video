@@ -281,10 +281,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Attempt to kill the associated process if it exists
         if ($automation && $automation['process_id']) {
+            $pid = escapeshellarg((string)$automation['process_id']);
             if (PHP_OS_FAMILY === 'Windows') {
-                exec("taskkill /F /PID {$automation['process_id']} 2>NUL", $output, $exitCode);
+                exec("taskkill /F /PID {$pid} 2>NUL", $output, $exitCode);
             } else {
-                exec("kill -TERM {$automation['process_id']} 2>/dev/null", $output, $exitCode);
+                exec("kill -TERM {$pid} 2>/dev/null", $output, $exitCode);
             }
         }
         
@@ -302,10 +303,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Attempt to kill the associated process if it exists
         if ($automation && $automation['process_id']) {
+            $pid = escapeshellarg((string)$automation['process_id']);
             if (PHP_OS_FAMILY === 'Windows') {
-                exec("taskkill /F /PID {$automation['process_id']} 2>NUL", $output, $exitCode);
+                exec("taskkill /F /PID {$pid} 2>NUL", $output, $exitCode);
             } else {
-                exec("kill -TERM {$automation['process_id']} 2>/dev/null", $output, $exitCode);
+                exec("kill -TERM {$pid} 2>/dev/null", $output, $exitCode);
             }
         }
         
