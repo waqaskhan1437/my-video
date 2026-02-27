@@ -275,9 +275,8 @@ if (!$automation) {
 
 // Check if GitHub runner is enabled - if yes, dispatch to GitHub instead of running locally
 $githubRunnerEnabled = !empty($automation['github_runner_enabled']) && $automation['github_runner_enabled'] !== '0';
-$githubWorkflow = $automation['github_workflow'] ?? '';
 
-if ($githubRunnerEnabled && !empty($githubWorkflow)) {
+if ($githubRunnerEnabled) {
     sendProgress('github', 'info', 'GitHub runner enabled - dispatching to GitHub Actions...', 5, ['fetched' => 0, 'downloaded' => 0, 'processed' => 0, 'scheduled' => 0, 'posted' => 0, 'errors' => 0]);
 
     // Get GitHub API settings
@@ -288,21 +287,12 @@ if ($githubRunnerEnabled && !empty($githubWorkflow)) {
         $githubRepo = $pdo->query("SELECT setting_value FROM settings WHERE setting_key = 'github_repo_name'")->fetchColumn();
         $githubBranch = $pdo->query("SELECT setting_value FROM settings WHERE setting_key = 'github_repo_branch'")->fetchColumn() ?: 'main';
 
-        // Map workflow type to file name
-        $workflowMap = [
-            'pipeline' => $pdo->query("SELECT setting_value FROM settings WHERE setting_key = 'github_workflow_archive'")->fetchColumn() ?: 'pipeline.yml',
-            'social' => $pdo->query("SELECT setting_value FROM settings WHERE setting_key = 'github_workflow_social'")->fetchColumn() ?: 'social-publish.yml',
-            'postforme' => $pdo->query("SELECT setting_value FROM settings WHERE setting_key = 'github_workflow_postforme'")->fetchColumn() ?: 'archive-postforme.yml',
-            'whisper' => $pdo->query("SELECT setting_value FROM settings WHERE setting_key = 'github_workflow_whisper'")->fetchColumn() ?: 'whisper-cpu.yml',
-        ];
-
-        $workflowFile = $workflowMap[$githubWorkflow] ?? 'pipeline.yml';
-
         if ($githubEnabled === '1' && $githubToken && $githubOwner && $githubRepo) {
-            // Dispatch to GitHub
+            // Dispatch to unified automation workflow
+            // Pass automation ID so workflow can fetch all configuration from database
             $ch = curl_init();
             curl_setopt_array($ch, [
-                CURLOPT_URL => "https://api.github.com/repos/{$githubOwner}/{$githubRepo}/actions/workflows/{$workflowFile}/dispatches",
+                CURLOPT_URL => "https://api.github.com/repos/{$githubOwner}/{$githubRepo}/actions/workflows/automation.yml/dispatches",
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_TIMEOUT => 30,
                 CURLOPT_HTTPHEADER => [
@@ -315,7 +305,9 @@ if ($githubRunnerEnabled && !empty($githubWorkflow)) {
                 CURLOPT_POST => true,
                 CURLOPT_POSTFIELDS => json_encode([
                     'ref' => $githubBranch,
-                    'inputs' => []
+                    'inputs' => [
+                        'automation_id' => (string)$automationId
+                    ]
                 ])
             ]);
 

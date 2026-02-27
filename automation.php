@@ -1248,20 +1248,16 @@ refreshOutputVideoCount();
 
                     <!-- GitHub Runner Options (shown when enabled) -->
                     <div id="github_runner_options" class="hidden mt-4 space-y-3 p-4 bg-gray-800/50 rounded-lg border border-purple-500/20">
-                        <div>
-                            <label class="block text-xs text-gray-400 mb-2">Select Workflow to Run</label>
-                            <select name="github_workflow" id="github_workflow" class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-sm">
-                                <option value="">Manual Trigger Only</option>
-                                <option value="pipeline">Pipeline (Archive)</option>
-                                <option value="social">Social Publish (YouTube)</option>
-                                <option value="postforme">Archive to PostForMe</option>
-                                <option value="whisper">Whisper Transcription</option>
-                            </select>
-                        </div>
-                        <div class="p-2 bg-purple-500/10 border border-purple-500/20 rounded-lg">
-                            <p class="text-xs text-purple-300">✓ When checked, this automation can be triggered via GitHub Actions</p>
-                            <p class="text-xs text-purple-300">✓ You'll see a "Run on GitHub" button in the dashboard</p>
-                            <p class="text-xs text-purple-300">✓ Automation will run on GitHub servers instead of your PC</p>
+                        <input type="hidden" name="github_workflow" id="github_workflow" value="unified">
+                        <div class="p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                            <p class="text-sm text-purple-300 font-semibold">✓ Unified Automation Runner</p>
+                            <p class="text-xs text-purple-300 mt-2">When checked, this automation will run on GitHub servers using your configured settings:</p>
+                            <ul class="text-xs text-purple-300 mt-2 ml-3 space-y-1">
+                                <li>📹 Video source: <span id="github_source_display">FTP</span></li>
+                                <li>✂️ Editing: <span id="github_edit_display">Disabled</span></li>
+                                <li>📤 Posting: <span id="github_post_display">Disabled</span></li>
+                            </ul>
+                            <p class="text-xs text-purple-400 mt-3">🌐 Same flow as local, but runs on GitHub's servers 24/7</p>
                         </div>
                     </div>
                 </div>
@@ -1739,20 +1735,16 @@ refreshOutputVideoCount();
 
                     <!-- GitHub Runner Options (shown when enabled) -->
                     <div id="edit_github_runner_options" class="hidden mt-4 space-y-3 p-4 bg-gray-800/50 rounded-lg border border-purple-500/20">
-                        <div>
-                            <label class="block text-xs text-gray-400 mb-2">Select Workflow to Run</label>
-                            <select name="github_workflow" id="edit_github_workflow" class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-sm">
-                                <option value="">Manual Trigger Only</option>
-                                <option value="pipeline">Pipeline (Archive)</option>
-                                <option value="social">Social Publish (YouTube)</option>
-                                <option value="postforme">Archive to PostForMe</option>
-                                <option value="whisper">Whisper Transcription</option>
-                            </select>
-                        </div>
-                        <div class="p-2 bg-purple-500/10 border border-purple-500/20 rounded-lg">
-                            <p class="text-xs text-purple-300">✓ When checked, this automation can be triggered via GitHub Actions</p>
-                            <p class="text-xs text-purple-300">✓ You'll see a "Run on GitHub" button in the dashboard</p>
-                            <p class="text-xs text-purple-300">✓ Automation will run on GitHub servers instead of your PC</p>
+                        <input type="hidden" name="github_workflow" id="edit_github_workflow" value="unified">
+                        <div class="p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                            <p class="text-sm text-purple-300 font-semibold">✓ Unified Automation Runner</p>
+                            <p class="text-xs text-purple-300 mt-2">When checked, this automation will run on GitHub servers using your configured settings:</p>
+                            <ul class="text-xs text-purple-300 mt-2 ml-3 space-y-1">
+                                <li>📹 Video source: <span id="edit_github_source_display">FTP</span></li>
+                                <li>✂️ Editing: <span id="edit_github_edit_display">Disabled</span></li>
+                                <li>📤 Posting: <span id="edit_github_post_display">Disabled</span></li>
+                            </ul>
+                            <p class="text-xs text-purple-400 mt-3">🌐 Same flow as local, but runs on GitHub's servers 24/7</p>
                         </div>
                     </div>
                 </div>

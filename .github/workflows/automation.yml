@@ -1,0 +1,147 @@
+name: Universal Automation Runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      automation_id:
+        description: 'Automation configuration ID'
+        required: true
+        type: string
+
+jobs:
+  run-automation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 480
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          extensions: curl, json, pdo_mysql, gd, mbstring, fileinfo
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg imagemagick curl jq
+
+      - name: Create necessary directories
+        run: |
+          mkdir -p logs
+          mkdir -p downloads
+          mkdir -p processed
+          mkdir -p transcriptions
+          echo "GitHub Automation Runner started at $(date)" > logs/automation_run_${{ github.run_id }}.log
+
+      - name: Download database dump with automation config
+        run: |
+          echo "Fetching automation configuration (ID: ${{ inputs.automation_id }})" | tee -a logs/automation_run_${{ github.run_id }}.log
+
+          curl -X GET "${{ secrets.WORKFLOW_API_ENDPOINT }}/api/get-automation-config.php?automation_id=${{ inputs.automation_id }}" \
+            -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -o automation_config.json \
+            --max-time 60 \
+            -v 2>&1 | tee -a logs/automation_run_${{ github.run_id }}.log
+
+          if [ ! -f automation_config.json ]; then
+            echo "❌ Failed to fetch automation configuration" | tee -a logs/automation_run_${{ github.run_id }}.log
+            exit 1
+          fi
+
+          echo "✅ Configuration downloaded" | tee -a logs/automation_run_${{ github.run_id }}.log
+          cat automation_config.json | tee -a logs/automation_run_${{ github.run_id }}.log
+
+      - name: Run automation logic
+        run: |
+          echo "Starting automation execution..." | tee -a logs/automation_run_${{ github.run_id }}.log
+
+          # Run the automation PHP script with configuration
+          curl -X POST "${{ secrets.WORKFLOW_API_ENDPOINT }}/api/github-run-automation.php" \
+            -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d @automation_config.json \
+            --max-time 14400 \
+            --connect-timeout 60 \
+            --retry 2 \
+            -v 2>&1 | tee -a logs/automation_run_${{ github.run_id }}.log
+
+          echo "Automation execution completed" | tee -a logs/automation_run_${{ github.run_id }}.log
+
+      - name: Download results from API
+        if: always()
+        run: |
+          echo "Collecting automation results..." | tee -a logs/automation_run_${{ github.run_id }}.log
+
+          # Fetch processed videos if any
+          curl -X GET "${{ secrets.WORKFLOW_API_ENDPOINT }}/api/get-automation-results.php?automation_id=${{ inputs.automation_id }}&run_id=${{ github.run_id }}" \
+            -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            --max-time 60 \
+            -v 2>&1 | tee -a logs/automation_run_${{ github.run_id }}.log || true
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: automation-logs-${{ github.run_id }}
+          path: logs/
+          retention-days: 7
+
+      - name: Upload processed videos
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: automation-videos-${{ github.run_id }}
+          path: processed/
+          retention-days: 30
+        continue-on-error: true
+
+      - name: Upload transcriptions
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: automation-transcriptions-${{ github.run_id }}
+          path: transcriptions/
+          retention-days: 30
+        continue-on-error: true
+
+      - name: Notify completion
+        if: always()
+        run: |
+          echo "Notifying API of workflow completion..." | tee -a logs/automation_run_${{ github.run_id }}.log
+
+          curl -X POST "${{ secrets.WORKFLOW_API_ENDPOINT }}/api/github-automation-complete.php" \
+            -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "automation_id": "${{ inputs.automation_id }}",
+              "github_run_id": "${{ github.run_id }}",
+              "github_run_number": "${{ github.run_number }}",
+              "workflow_conclusion": "'${{ job.status }}'",
+              "completed_at": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+            }' \
+            --max-time 30 \
+            -v 2>&1 | tee -a logs/automation_run_${{ github.run_id }}.log || true
+
+      - name: Success Summary
+        if: success()
+        run: |
+          echo "## ✅ Automation Completed Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Automation ID**: ${{ inputs.automation_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run ID**: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Failure Summary
+        if: failure()
+        run: |
+          echo "## ❌ Automation Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Automation ID**: ${{ inputs.automation_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run ID**: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Check logs**: automation-logs-${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY
