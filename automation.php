@@ -58,7 +58,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($action === 'create') {
         $randomWords = array_filter(array_map('trim', explode(',', $_POST['random_words'] ?? '')));
-        
+
+        // GitHub Actions Runner settings
+        $githubRunnerEnabled = isset($_POST['github_runner_enabled']) ? 1 : 0;
+        $githubWorkflow = $githubRunnerEnabled ? ($_POST['github_workflow'] ?? '') : '';
+
         // Post for Me account IDs (as JSON array)
         $postformeAccountIds = isset($_POST['postforme_account_ids']) ? json_encode($_POST['postforme_account_ids']) : '[]';
         $videoSource = $_POST['video_source'] ?? 'ftp';
@@ -66,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ? normalizeManualVideoUrls($_POST['manual_video_urls'] ?? '')
             : null;
         
-        $stmt = $pdo->prepare("INSERT INTO automation_settings (name, video_source, manual_video_urls, api_key_id, enabled, video_days_filter, video_start_date, video_end_date, videos_per_run, short_duration, short_aspect_ratio, ai_taglines_enabled, ai_tagline_prompt, branding_text_top, branding_text_bottom, random_words, whisper_enabled, whisper_language, schedule_type, schedule_hour, schedule_every_minutes, youtube_enabled, youtube_api_key, youtube_channel_id, tiktok_enabled, tiktok_access_token, instagram_enabled, instagram_access_token, facebook_enabled, facebook_access_token, facebook_page_id, postforme_enabled, postforme_account_ids, postforme_schedule_mode, postforme_schedule_datetime, postforme_schedule_timezone, postforme_schedule_offset_minutes, postforme_schedule_spread_minutes, rotation_enabled, rotation_shuffle, rotation_auto_reset, status, next_run_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO automation_settings (name, video_source, manual_video_urls, api_key_id, enabled, video_days_filter, video_start_date, video_end_date, videos_per_run, short_duration, short_aspect_ratio, ai_taglines_enabled, ai_tagline_prompt, branding_text_top, branding_text_bottom, random_words, whisper_enabled, whisper_language, schedule_type, schedule_hour, schedule_every_minutes, youtube_enabled, youtube_api_key, youtube_channel_id, tiktok_enabled, tiktok_access_token, instagram_enabled, instagram_access_token, facebook_enabled, facebook_access_token, facebook_page_id, postforme_enabled, postforme_account_ids, postforme_schedule_mode, postforme_schedule_datetime, postforme_schedule_timezone, postforme_schedule_offset_minutes, postforme_schedule_spread_minutes, rotation_enabled, rotation_shuffle, rotation_auto_reset, github_runner_enabled, github_workflow, status, next_run_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         
         $enabled = isset($_POST['enabled']) ? 1 : 0;
         $status = $enabled ? 'running' : 'inactive';
@@ -139,6 +143,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 isset($_POST['rotation_enabled']) ? 1 : 0,
                 isset($_POST['rotation_shuffle']) ? 1 : 0,
                 isset($_POST['rotation_auto_reset']) ? 1 : 0,
+                $githubRunnerEnabled,
+                $githubWorkflow ?: null,
                 $status,
                 $nextRunAt
             ]);
