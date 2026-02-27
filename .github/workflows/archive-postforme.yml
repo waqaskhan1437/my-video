@@ -1,34 +1,49 @@
-name: Archive to PostForMe Daily
+name: Archive to PostForMe Multi Automation
 
 on:
   workflow_dispatch:
     inputs:
-      max_items:
-        description: "How many archive items to process this run"
+      run_mode:
+        description: "run = process automation profiles, list_accounts = show connected PostForMe accounts"
         required: false
-        default: "1"
-      archive_prefix:
-        description: "Archive identifier prefix"
-        required: false
-        default: "gp_"
-      platforms:
-        description: "Comma-separated platform filter (e.g. instagram,facebook)"
+        type: choice
+        default: "run"
+        options:
+          - "run"
+          - "list_accounts"
+      automation_id:
+        description: "Optional single automation ID from automations/postforme_automations.json"
         required: false
         default: ""
-      full_offset_minutes:
-        description: "Minutes from now to schedule full post"
+      window_mode:
+        description: "Override source window mode for this run"
         required: false
-        default: "20"
-      short_offset_minutes:
-        description: "Minutes from now to schedule short post"
+        type: choice
+        default: "automation"
+        options:
+          - "automation"
+          - "new_since_last_run"
+          - "last_x_days"
+          - "specific_date"
+          - "all"
+      last_x_days:
+        description: "Used when window_mode=last_x_days (example: 7)"
         required: false
-        default: "80"
-      item_spacing_minutes:
-        description: "Minutes spacing between archive items"
+        default: ""
+      specific_date:
+        description: "Used when window_mode=specific_date (YYYY-MM-DD)"
         required: false
-        default: "240"
+        default: ""
+      max_items_override:
+        description: "Optional max items override for selected automation(s)"
+        required: false
+        default: ""
+      archive_prefix_override:
+        description: "Optional archive prefix override (example: gp_)"
+        required: false
+        default: ""
       dry_run:
-        description: "Create schedule without API post creation"
+        description: "true = no real social-post creation"
         required: false
         type: choice
         default: "false"
@@ -63,7 +78,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
           python -m pip install --upgrade pip
-          pip install requests
+          pip install requests yt-dlp
 
       - name: Validate secrets
         env:
@@ -78,14 +93,15 @@ jobs:
         env:
           POSTFORME_API_KEY: ${{ secrets.POSTFORME_API_KEY }}
           POSTFORME_BASE_URL: https://api.postforme.dev/v1
-          ARCHIVE_PREFIX: ${{ inputs.archive_prefix || 'gp_' }}
-          POSTFORME_PLATFORMS: ${{ inputs.platforms || '' }}
-          MAX_ITEMS_PER_RUN: ${{ inputs.max_items || '1' }}
-          FULL_OFFSET_MINUTES: ${{ inputs.full_offset_minutes || '20' }}
-          SHORT_OFFSET_MINUTES: ${{ inputs.short_offset_minutes || '80' }}
-          ITEM_SPACING_MINUTES: ${{ inputs.item_spacing_minutes || '240' }}
+          AUTOMATIONS_CONFIG_PATH: automations/postforme_automations.json
+          RUN_MODE: ${{ inputs.run_mode || 'run' }}
+          AUTOMATION_ID: ${{ inputs.automation_id || '' }}
+          WINDOW_MODE_OVERRIDE: ${{ inputs.window_mode || 'automation' }}
+          LAST_X_DAYS_OVERRIDE: ${{ inputs.last_x_days || '' }}
+          SPECIFIC_DATE_OVERRIDE: ${{ inputs.specific_date || '' }}
+          MAX_ITEMS_OVERRIDE: ${{ inputs.max_items_override || '' }}
+          ARCHIVE_PREFIX_OVERRIDE: ${{ inputs.archive_prefix_override || '' }}
           DRY_RUN: ${{ inputs.dry_run || 'false' }}
-          POSTFORME_SKIP_MEDIA_PROCESSING: "false"
         run: python scripts/archive_to_postforme.py
 
       - name: Commit postforme state
@@ -101,3 +117,4 @@ jobs:
           git add postforme_state.json
           git commit -m "chore: update postforme automation state"
           git push
+

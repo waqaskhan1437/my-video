@@ -3,8 +3,8 @@
 Is repo me 3 automations hain:
 
 1. Google Photos Picker se videos uthao, compress karo, Archive.org upload karo  
-2. Archive.org se same videos uthao, ek full horizontal aur ek short banao, YouTube par post karo  
-3. Archive.org se videos process karo aur PostForMe ke zariye social accounts par schedule/post karo (daily)
+2. Archive.org se full + short banao aur YouTube par post karo  
+3. Archive.org/external links se videos process karo aur PostForMe ke zariye multiple social accounts par schedule/post karo
 
 ## Files
 
@@ -15,6 +15,8 @@ Is repo me 3 automations hain:
 scripts/picker_pipeline.py
 scripts/social_post_pipeline.py
 scripts/archive_to_postforme.py
+automations/postforme_automations.json
+automations/external_links.json
 processed.txt
 social_state.json
 postforme_state.json
@@ -56,14 +58,8 @@ Scope for token:
    - `max_items` (default `1`)
    - `archive_prefix` (default `gp_`)
    - `privacy_status` (`public` / `unlisted` / `private`)
-3. Workflow:
-   - Archive item download karta hai
-   - Full horizontal (16:9) generate karta hai
-   - Short vertical (9:16, 59s) generate karta hai
-   - Dono YouTube par upload karta hai
-   - `social_state.json` me progress save karta hai
 
-## Flow C: Archive.org -> PostForMe (Daily)
+## Flow C: Archive.org + External Links -> PostForMe (Multi Automation)
 
 Ye flow alag hai aur YouTube flow se independent chal sakta hai.
 
@@ -71,35 +67,69 @@ Ye flow alag hai aur YouTube flow se independent chal sakta hai.
 
 - `POSTFORME_API_KEY`
 
-### Run
+### Automation profiles config
 
-1. Actions -> `Archive to PostForMe Daily` -> `Run workflow`
-2. Inputs:
-   - `max_items` (default `1`)
-   - `archive_prefix` (default `gp_`)
-   - `platforms` (optional, comma separated, e.g. `instagram,facebook`)
-   - `full_offset_minutes` (default `20`)
-   - `short_offset_minutes` (default `80`)
-   - `item_spacing_minutes` (default `240`)
-3. Workflow:
-   - Archive se new source video fetch karta hai
-   - Full horizontal + short vertical generate karta hai
-   - Processed files PostForMe media me upload karta hai
-   - PostForMe `/social-posts` par scheduled posts create karta hai
-   - `postforme_state.json` me progress save karta hai
+Main config file: `automations/postforme_automations.json`
+
+Har automation profile me aap set kar sakte hain:
+
+- `id` (unique automation name)
+- `source.selection_mode`
+  - `new_since_last_run`
+  - `last_x_days`
+  - `specific_date`
+  - `all`
+- `source.last_x_days`
+- `source.specific_date` (`YYYY-MM-DD`)
+- `source.archive_prefix`
+- `source.external_links_file`
+- `posting.account_ids` (per automation custom account IDs)
+- `posting.platforms` (fallback filter if account_ids blank)
+- offsets and spacing (`full_offset_minutes`, `short_offset_minutes`, `item_spacing_minutes`)
+
+External links file: `automations/external_links.json`
+
+Example external item:
+
+```json
+{
+  "id": "fiverr-demo-1",
+  "enabled": true,
+  "url": "https://example.com/video.mp4",
+  "title": "Fiverr Portfolio Demo",
+  "date": "2026-02-20"
+}
+```
+
+### Run workflow
+
+1. Actions -> `Archive to PostForMe Multi Automation` -> `Run workflow`
+2. `run_mode`:
+   - `run`: posts schedule/create karega
+   - `list_accounts`: connected PostForMe account IDs show karega
+3. Optional overrides:
+   - `automation_id`: sirf aik profile chalani ho to
+   - `window_mode`: `automation`/`last_x_days`/`specific_date` etc
+   - `last_x_days`, `specific_date`
+   - `max_items_override`
+   - `archive_prefix_override`
+   - `dry_run=true` (test mode)
 
 ### Daily auto-run
 
-- Is workflow me daily cron already configured hai.
-- Daily run sirf new archive items ko process karega.
+- `archive-postforme.yml` me daily cron configured hai.
+- Daily run me state file `postforme_state.json` duplicate posting avoid karta hai.
 
 ## Important checks
 
 - Agar logs me `Run bash scripts/process.sh` dikhe to old flow chal raha hai.
-- Naye setup me `Run python scripts/picker_pipeline.py` aur social ke liye `Run python scripts/social_post_pipeline.py` aana chahiye.
-- PostForMe flow ke liye logs me `Run python scripts/archive_to_postforme.py` aana chahiye.
+- New photos->archive flow logs me `python scripts/picker_pipeline.py` aana chahiye.
+- YouTube flow logs me `python scripts/social_post_pipeline.py` aana chahiye.
+- PostForMe flow logs me `python scripts/archive_to_postforme.py` aana chahiye.
 
 ## Notes
 
-- YouTube API quota limit hoti hai; har upload quota use karta hai.
-- PostForMe automation `postforme_state.json` ki base par duplicate schedule avoid karta hai.
+- PostForMe multi-account setup ke liye pehle `run_mode=list_accounts` chala ke account IDs note karein.
+- External links ke liye `yt-dlp` workflow me auto install hota hai.
+- Agar aap ne secret chat me share kiya hai to security ke liye rotate karna behtar hai.
+
