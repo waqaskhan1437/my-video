@@ -13,6 +13,13 @@ Important:
 - Google Photos policies/links ki wajah se direct shared links kabhi fail ho sakte hain.
 - Agar link private ho to cookies chahiye hongi.
 - Sab process GitHub runner par hota hai, aapke laptop par nahi.
+- Agar log me `Unsupported URL: https://photos.google.com/share/...` aaye to us link ko tool read nahi kar pa raha.
+
+## Google Photos link unsupported ho to kya karein
+
+1. Best reliable path: videos ko Google Drive ya kisi direct-file source me rakho, phir woh links use karo.
+2. Ya Google Photos ka manual export (Takeout/download) karke source update karo.
+3. Workflow ab summary print karta hai aur agar upload 0 ho to run fail karega (red), taake false-success na aaye.
 
 ## 1) One-time setup
 
@@ -39,4 +46,3 @@ processed.txt
 - Public repo me standard GitHub-hosted runners free hote hain.
 - Ek job max 6 ghante chal sakti hai.
 - Bohat bari files/batch ho to links ko chunks me daalo.
-

@@ -14,6 +14,10 @@ if [ "${#LINKS[@]}" -eq 0 ]; then
   exit 0
 fi
 
+attempted=0
+uploaded=0
+failed=0
+
 for raw_url in "${LINKS[@]}"; do
   url="$(echo "${raw_url}" | sed 's/[[:space:]]*$//')"
   if [ -z "${url}" ]; then
@@ -25,6 +29,7 @@ for raw_url in "${LINKS[@]}"; do
     continue
   fi
 
+  attempted=$((attempted + 1))
   hash="$(printf '%s' "${url}" | sha1sum | awk '{print substr($1,1,12)}')"
   identifier="gp_${hash}_$(date -u +%Y%m%d%H%M%S)"
 
@@ -42,12 +47,14 @@ for raw_url in "${LINKS[@]}"; do
     --output "tmp/input/source.%(ext)s" \
     "${url}"; then
     echo "Download failed, continuing next URL."
+    failed=$((failed + 1))
     continue
   fi
 
   input_file="$(find tmp/input -maxdepth 1 -type f | head -n 1 || true)"
   if [ -z "${input_file}" ]; then
     echo "No source file found after download."
+    failed=$((failed + 1))
     continue
   fi
 
@@ -59,11 +66,13 @@ for raw_url in "${LINKS[@]}"; do
     -movflags +faststart \
     "tmp/output/video.mp4"; then
     echo "Compression failed, continuing next URL."
+    failed=$((failed + 1))
     continue
   fi
 
   if [ ! -f "tmp/output/video.mp4" ]; then
     echo "Compressed output missing, continuing."
+    failed=$((failed + 1))
     continue
   fi
 
@@ -74,11 +83,21 @@ for raw_url in "${LINKS[@]}"; do
     --metadata="source:google-photos-link" \
     --retries=5; then
     echo "Upload failed, continuing next URL."
+    failed=$((failed + 1))
     continue
   fi
 
   echo "${url}" >> processed.txt
   echo "Uploaded: https://archive.org/details/${identifier}"
+  uploaded=$((uploaded + 1))
 done
+
+echo "Summary: attempted=${attempted}, uploaded=${uploaded}, failed=${failed}"
+
+# Mark workflow red if we attempted items but uploaded nothing.
+if [ "${attempted}" -gt 0 ] && [ "${uploaded}" -eq 0 ]; then
+  echo "No uploads completed."
+  exit 1
+fi
 
 echo "Pipeline completed."
