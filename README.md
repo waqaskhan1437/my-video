@@ -1,43 +1,24 @@
-# Google Photos Picker -> Compress -> Archive.org (Free on GitHub Actions)
+# Google Photos -> Archive.org -> YouTube (Full + Short)
 
-Ye setup Google Photos **shared link** par depend nahi karta.  
-Isme Google Photos Picker API use hoti hai:
+Is repo me 2 automations hain:
 
-1. Session create hoti hai  
-2. Aap picker URL me videos select karte ho  
-3. Workflow selected videos download + compress + archive.org upload karta hai
-
-## Why this works
-
-- Direct `photos.app.goo.gl` links mostly automation-friendly nahi hotay.
-- Picker API official flow hai jahan user selection required hoti hai.
+1. Google Photos Picker se videos uthao, compress karo, Archive.org upload karo  
+2. Archive.org se same videos uthao, ek full horizontal aur ek short banao, YouTube par post karo
 
 ## Files
 
 ```text
 .github/workflows/pipeline.yml
+.github/workflows/social-publish.yml
 scripts/picker_pipeline.py
+scripts/social_post_pipeline.py
 processed.txt
+social_state.json
 ```
 
-## Migration check (important)
+## Flow A: Google Photos -> Archive.org
 
-- Agar run logs me `Run bash scripts/process.sh` dikhe, to aap abhi old workflow chala rahe ho.
-- Naye setup me logs me `Run python scripts/picker_pipeline.py` aana chahiye.
-
-## One-time setup
-
-1. Archive.org account me S3 keys banao: `https://archive.org/account/s3.php`
-2. Google Cloud me project banao.
-3. Google Photos Picker API enable karo.
-4. OAuth consent screen configure karo (test user me apna Gmail add karo).
-5. OAuth client credentials banao (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`).
-6. Refresh token lo (scope: `https://www.googleapis.com/auth/photospicker.mediaitems.readonly`).
-   - Easy method: OAuth Playground with your own client credentials.
-
-## GitHub Secrets
-
-Repo -> Settings -> Secrets and variables -> Actions:
+### Required GitHub secrets
 
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
@@ -45,29 +26,45 @@ Repo -> Settings -> Secrets and variables -> Actions:
 - `IA_ACCESS_KEY`
 - `IA_SECRET_KEY`
 
-## Run flow
-
-### Step A: Create picker session
+### Run
 
 1. Actions -> `Google Photos to Archive.org` -> `Run workflow`
-2. `mode` = `create_session`
-3. Run logs/summary se `Session ID` aur `Picker URL` copy karo
-4. Picker URL kholo, videos select karo, `Done` karo
+2. `mode=create_session`
+3. Logs se `PICKER_URI` kholo, videos select karo, `Done` karo
+4. Workflow dubara run karo: `mode=process_session` + `session_id`
 
-### Step B: Process selected videos
+## Flow B: Archive.org -> YouTube (Full + Short)
 
-1. Same workflow dubara run karo
-2. `mode` = `process_session`
-3. `session_id` me Step A wala session id paste karo
-4. Workflow:
-   - selected videos download karega
-   - ffmpeg se compress karega
-   - archive.org par upload karega
-   - `processed.txt` me processed item IDs save karega
+### Required GitHub secrets
+
+- `YT_CLIENT_ID`
+- `YT_CLIENT_SECRET`
+- `YT_REFRESH_TOKEN`
+
+Scope for token:
+
+- `https://www.googleapis.com/auth/youtube.upload`
+
+### Run
+
+1. Actions -> `Archive to Social (YouTube Full + Short)` -> `Run workflow`
+2. Inputs:
+   - `max_items` (default `1`)
+   - `archive_prefix` (default `gp_`)
+   - `privacy_status` (`public` / `unlisted` / `private`)
+3. Workflow:
+   - Archive item download karta hai
+   - Full horizontal (16:9) generate karta hai
+   - Short vertical (9:16, 59s) generate karta hai
+   - Dono YouTube par upload karta hai
+   - `social_state.json` me progress save karta hai
+
+## Important checks
+
+- Agar logs me `Run bash scripts/process.sh` dikhe to old flow chal raha hai.
+- Naye setup me `Run python scripts/picker_pipeline.py` aur social ke liye `Run python scripts/social_post_pipeline.py` aana chahiye.
 
 ## Notes
 
-- Process session run me `IA_*` secrets required hain.
-- Agar selected item video nahi hai to skip hoga.
-- Agar attempts hue lekin upload 0 raha, run fail (red) karega.
-- Session ID agar `sessions/...` form me ho to bhi script usay handle kar leti hai.
+- YouTube API quota limit hoti hai; har upload quota use karta hai.
+- Social workflow currently YouTube par configured hai (full + short).

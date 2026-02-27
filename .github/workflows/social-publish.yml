@@ -1,0 +1,86 @@
+name: Archive to Social (YouTube Full + Short)
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_items:
+        description: "How many archive items to publish in one run"
+        required: false
+        default: "1"
+      archive_prefix:
+        description: "Archive identifier prefix"
+        required: false
+        default: "gp_"
+      privacy_status:
+        description: "YouTube privacy status"
+        required: false
+        type: choice
+        default: unlisted
+        options:
+          - public
+          - unlisted
+          - private
+  schedule:
+    - cron: "20 */6 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: social-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --upgrade pip
+          pip install requests google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
+      - name: Validate secrets
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        run: |
+          if [ -z "${YT_CLIENT_ID}" ] || [ -z "${YT_CLIENT_SECRET}" ] || [ -z "${YT_REFRESH_TOKEN}" ]; then
+            echo "Missing YT_CLIENT_ID / YT_CLIENT_SECRET / YT_REFRESH_TOKEN"
+            exit 1
+          fi
+
+      - name: Publish videos
+        env:
+          MAX_ITEMS_PER_RUN: ${{ inputs.max_items }}
+          ARCHIVE_PREFIX: ${{ inputs.archive_prefix }}
+          YT_PRIVACY_STATUS: ${{ inputs.privacy_status }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        run: python scripts/social_post_pipeline.py
+
+      - name: Commit social state
+        run: |
+          touch social_state.json
+          if [ -z "$(git status --porcelain -- social_state.json)" ]; then
+            echo "No social state changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add social_state.json
+          git commit -m "chore: update social publish state"
+          git push
