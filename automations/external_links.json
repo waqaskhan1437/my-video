@@ -1,0 +1,19 @@
+{
+  "links": [
+    {
+      "id": "fiverr-demo-1",
+      "enabled": false,
+      "url": "https://example.com/path/to/video.mp4",
+      "title": "Fiverr Portfolio Demo 1",
+      "date": "2026-02-20"
+    },
+    {
+      "id": "client-approved-link-1",
+      "enabled": false,
+      "url": "https://example.com/another-video-link",
+      "title": "Client Approved External Video",
+      "date": "2026-02-22"
+    }
+  ]
+}
+

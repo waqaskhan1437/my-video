@@ -1,0 +1,63 @@
+{
+  "default_caption_templates": {
+    "full_caption": "{title}\n\nSource: {source_url}",
+    "short_caption": "{title}\n\nShort clip\nSource: {source_url}\n#shorts"
+  },
+  "automations": [
+    {
+      "id": "daily_archive_accounts_a",
+      "enabled": true,
+      "description": "Main daily automation for selected social accounts.",
+      "source": {
+        "archive_prefix": "gp_",
+        "selection_mode": "new_since_last_run",
+        "last_x_days": 7,
+        "specific_date": "",
+        "max_archive_scan": 300,
+        "max_items_per_run": 2,
+        "include_archive": true,
+        "dedupe_scope": "automation",
+        "external_links_file": "automations/external_links.json",
+        "external_link_ids": []
+      },
+      "posting": {
+        "account_ids": [],
+        "platforms": [],
+        "full_offset_minutes": 20,
+        "short_offset_minutes": 80,
+        "item_spacing_minutes": 240,
+        "skip_media_processing": false,
+        "full_caption_template": "{title}\n\nSource: {source_url}",
+        "short_caption_template": "{title}\n\nShort clip\nSource: {source_url}\n#shorts"
+      }
+    },
+    {
+      "id": "specific_date_campaign",
+      "enabled": false,
+      "description": "Example profile for specific date campaigns.",
+      "source": {
+        "archive_prefix": "gp_",
+        "selection_mode": "specific_date",
+        "specific_date": "2026-02-27",
+        "last_x_days": 7,
+        "max_archive_scan": 300,
+        "max_items_per_run": 3,
+        "include_archive": true,
+        "dedupe_scope": "global",
+        "external_links_file": "automations/external_links.json",
+        "external_link_ids": []
+      },
+      "posting": {
+        "account_ids": [],
+        "platforms": ["instagram", "facebook"],
+        "full_offset_minutes": 30,
+        "short_offset_minutes": 120,
+        "item_spacing_minutes": 180,
+        "skip_media_processing": false,
+        "full_caption_template": "{title}\n\nWatch now: {source_url}",
+        "short_caption_template": "{title}\n\nQuick short\n{source_url}\n#shorts"
+      }
+    }
+  ]
+}
+
