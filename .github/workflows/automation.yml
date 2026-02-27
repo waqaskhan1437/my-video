@@ -12,6 +12,9 @@ jobs:
   run-automation:
     runs-on: ubuntu-latest
     timeout-minutes: 480
+    env:
+      API_BASE_URL: ${{ secrets.WORKFLOW_API_ENDPOINT }}
+      AUTOMATION_API_KEY: ${{ secrets.AUTOMATION_API_KEY }}
 
     steps:
       - name: Checkout repository
@@ -22,6 +25,28 @@ jobs:
         with:
           php-version: '7.4'
           extensions: curl, json, pdo_mysql, gd, mbstring, fileinfo
+
+      - name: Validate required secrets
+        run: |
+          if [ -z "${API_BASE_URL}" ]; then
+            echo "::error::Missing repository secret: WORKFLOW_API_ENDPOINT"
+            exit 1
+          fi
+
+          if [ -z "${AUTOMATION_API_KEY}" ]; then
+            echo "::error::Missing repository secret: AUTOMATION_API_KEY"
+            exit 1
+          fi
+
+          if ! echo "${API_BASE_URL}" | grep -Eq '^https?://'; then
+            echo "::error::WORKFLOW_API_ENDPOINT must start with http:// or https://"
+            exit 1
+          fi
+
+          if echo "${API_BASE_URL}" | grep -Eqi '^https?://(localhost|127\.0\.0\.1|0\.0\.0\.0)(/|$)'; then
+            echo "::error::WORKFLOW_API_ENDPOINT points to localhost. GitHub-hosted runners cannot reach your local machine."
+            exit 1
+          fi
 
       - name: Install system dependencies
         run: |
@@ -39,9 +64,10 @@ jobs:
       - name: Download database dump with automation config
         run: |
           echo "Fetching automation configuration (ID: ${{ inputs.automation_id }})" | tee -a logs/automation_run_${{ github.run_id }}.log
+          BASE_URL="${API_BASE_URL%/}"
 
-          curl -X GET "${{ secrets.WORKFLOW_API_ENDPOINT }}/api/get-automation-config.php?automation_id=${{ inputs.automation_id }}" \
-            -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
+          curl -X GET "${BASE_URL}/api/get-automation-config.php?automation_id=${{ inputs.automation_id }}" \
+            -H "Authorization: Bearer ${AUTOMATION_API_KEY}" \
             -H "Content-Type: application/json" \
             -o automation_config.json \
             --max-time 60 \
@@ -60,10 +86,11 @@ jobs:
         id: run_automation
         run: |
           echo "Starting automation execution..." | tee -a logs/automation_run_${{ github.run_id }}.log
+          BASE_URL="${API_BASE_URL%/}"
 
           # Run the automation PHP script with configuration
-          RESPONSE=$(curl -X POST "${{ secrets.WORKFLOW_API_ENDPOINT }}/api/github-run-automation.php" \
-            -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
+          RESPONSE=$(curl -X POST "${BASE_URL}/api/github-run-automation.php" \
+            -H "Authorization: Bearer ${AUTOMATION_API_KEY}" \
             -H "Content-Type: application/json" \
             -d @automation_config.json \
             --max-time 14400 \
@@ -82,8 +109,8 @@ jobs:
             echo "❌ Automation failed with HTTP $HTTP_CODE" | tee -a logs/automation_run_${{ github.run_id }}.log
 
             # Log error back to API for real-time dashboard update
-            curl -X POST "${{ secrets.WORKFLOW_API_ENDPOINT }}/api/log-automation-error.php" \
-              -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
+            curl -X POST "${BASE_URL}/api/log-automation-error.php" \
+              -H "Authorization: Bearer ${AUTOMATION_API_KEY}" \
               -H "Content-Type: application/json" \
               -d '{
                 "automation_id": "${{ inputs.automation_id }}",
@@ -102,10 +129,11 @@ jobs:
         if: always()
         run: |
           echo "Collecting automation results..." | tee -a logs/automation_run_${{ github.run_id }}.log
+          BASE_URL="${API_BASE_URL%/}"
 
           # Fetch processed videos if any
-          curl -X GET "${{ secrets.WORKFLOW_API_ENDPOINT }}/api/get-automation-results.php?automation_id=${{ inputs.automation_id }}&run_id=${{ github.run_id }}" \
-            -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
+          curl -X GET "${BASE_URL}/api/get-automation-results.php?automation_id=${{ inputs.automation_id }}&run_id=${{ github.run_id }}" \
+            -H "Authorization: Bearer ${AUTOMATION_API_KEY}" \
             -H "Content-Type: application/json" \
             --max-time 60 \
             -v 2>&1 | tee -a logs/automation_run_${{ github.run_id }}.log || true
@@ -140,9 +168,10 @@ jobs:
         if: always()
         run: |
           echo "Notifying API of workflow completion..." | tee -a logs/automation_run_${{ github.run_id }}.log
+          BASE_URL="${API_BASE_URL%/}"
 
-          curl -X POST "${{ secrets.WORKFLOW_API_ENDPOINT }}/api/github-automation-complete.php" \
-            -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
+          curl -X POST "${BASE_URL}/api/github-automation-complete.php" \
+            -H "Authorization: Bearer ${AUTOMATION_API_KEY}" \
             -H "Content-Type: application/json" \
             -d '{
               "automation_id": "${{ inputs.automation_id }}",
