@@ -1,0 +1,12 @@
+1
+00:00:00,050 --> 00:00:02,392
+Step six: Set it and forget it.
+
+2
+00:00:02,392 --> 00:00:06,952
+Automations run every few minutes, hourly, daily, or weekly.
+
+3
+00:00:06,952 --> 00:00:11,476
+Live progress tracking, detailed logs, and automatic error recovery.
+

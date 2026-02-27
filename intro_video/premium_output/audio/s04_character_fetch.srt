@@ -1,0 +1,12 @@
+1
+00:00:00,050 --> 00:00:02,357
+Step one: Connect your video source.
+
+2
+00:00:02,357 --> 00:00:06,369
+Bunny CDN, FTP servers, or any cloud storage.
+
+3
+00:00:06,369 --> 00:00:10,928
+The system fetches videos automatically with smart filtering and rotation.
+

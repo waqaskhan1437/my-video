@@ -1,0 +1,12 @@
+1
+00:00:00,050 --> 00:00:05,571
+The answer is: move one stick from the five to make it a nine, and turn the plus into a minus.
+
+2
+00:00:05,571 --> 00:00:07,809
+Nine minus three equals six!
+
+3
+00:00:07,809 --> 00:00:08,892
+Amazing right?
+

@@ -1,0 +1,16 @@
+1
+00:00:00,050 --> 00:00:02,488
+Ready to automate your entire video pipeline?
+
+2
+00:00:02,488 --> 00:00:07,372
+Video Workflow Manager is your all-in-one solution for content automation at scale.
+
+3
+00:00:07,372 --> 00:00:12,511
+Self-hosted, fully customizable, and built to save you hours every single day.
+
+4
+00:00:12,511 --> 00:00:13,530
+Let's get started.
+

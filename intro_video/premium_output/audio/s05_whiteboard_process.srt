@@ -1,0 +1,12 @@
+1
+00:00:00,050 --> 00:00:05,428
+Step two: FFmpeg converts every video into six aspect ratios.
+
+2
+00:00:05,428 --> 00:00:09,559
+Vertical for shorts, square for feeds, widescreen for YouTube.
+
+3
+00:00:09,559 --> 00:00:13,940
+Crop or fit mode, custom durations, high quality encoding.
+

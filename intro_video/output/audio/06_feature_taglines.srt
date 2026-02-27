@@ -1,0 +1,12 @@
+1
+00:00:00,050 --> 00:00:02,175
+Never run out of creative taglines.
+
+2
+00:00:02,175 --> 00:00:09,340
+The AI engine uses Google Gemini or OpenAI to generate unique, engaging text for every single video.
+
+3
+00:00:09,340 --> 00:00:15,706
+Plus, a built-in library of over five thousand viral taglines with emojis as an instant fallback.
+

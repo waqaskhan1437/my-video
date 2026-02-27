@@ -1,0 +1,144 @@
+1
+00:00:00,050 --> 00:00:08,310
+What if your entire video workflow, from fetching raw footage to posting branded shorts on every social platform, ran completely on autopilot?
+
+2
+00:00:09,226 --> 00:00:21,455
+Every day, content creators and agencies waste hours downloading videos, editing them into shorts, adding captions, writing taglines, and manually posting to YouTube, TikTok, Instagram, and Facebook.
+
+3
+00:00:21,455 --> 00:00:24,442
+It's repetitive, exhausting, and it doesn't scale.
+
+4
+00:00:25,361 --> 00:00:27,533
+Introducing Video Workflow Manager.
+
+5
+00:00:27,533 --> 00:00:36,584
+A powerful automation engine that fetches your videos, converts them into branded shorts with AI captions and taglines, and posts them everywhere, automatically.
+
+6
+00:00:37,489 --> 00:00:39,163
+Connect any video source.
+
+7
+00:00:39,163 --> 00:00:43,064
+Bunny CDN, FTP servers, or any cloud storage.
+
+8
+00:00:43,064 --> 00:00:49,857
+The system fetches your videos automatically with smart date filtering and rotation to ensure every video gets processed.
+
+9
+00:00:50,769 --> 00:00:53,080
+FFmpeg powers the video engine.
+
+10
+00:00:53,080 --> 00:01:01,054
+Convert any video into six different aspect ratios: vertical for Shorts and Reels, square for feeds, or widescreen.
+
+11
+00:01:01,054 --> 00:01:02,676
+Choose crop or fit mode.
+
+12
+00:01:02,676 --> 00:01:07,432
+Set custom durations and let the smart segment selector find the best starting point.
+
+13
+00:01:08,345 --> 00:01:12,311
+Auto-generate captions in over twenty languages with OpenAI Whisper.
+
+14
+00:01:12,311 --> 00:01:19,163
+Word-level timestamps ensure perfectly synced subtitles that are burned directly into your videos for maximum engagement.
+
+15
+00:01:20,065 --> 00:01:22,190
+Never run out of creative taglines.
+
+16
+00:01:22,190 --> 00:01:29,355
+The AI engine uses Google Gemini or OpenAI to generate unique, engaging text for every single video.
+
+17
+00:01:29,355 --> 00:01:35,721
+Plus, a built-in library of over five thousand viral taglines with emojis as an instant fallback.
+
+18
+00:01:36,633 --> 00:01:38,886
+Post to nine platforms simultaneously.
+
+19
+00:01:38,886 --> 00:01:46,525
+YouTube Shorts, TikTok, Instagram Reels, Facebook, Threads, X, LinkedIn, Pinterest, and Bluesky.
+
+20
+00:01:46,525 --> 00:01:51,849
+Schedule posts with custom timing, stagger them for maximum reach, or publish immediately.
+
+21
+00:01:52,745 --> 00:01:54,118
+Set it and forget it.
+
+22
+00:01:54,118 --> 00:01:59,095
+Schedule automations to run every few minutes, hourly, daily, or weekly.
+
+23
+00:01:59,095 --> 00:02:05,924
+The built-in cron system handles everything with live progress tracking, detailed logs, and automatic error recovery.
+
+24
+00:02:06,841 --> 00:02:08,932
+Built with battle-tested technology.
+
+25
+00:02:08,932 --> 00:02:19,869
+PHP backend running on XAMPP, MySQL database with auto-migration, FFmpeg for video processing, and a modern dark-themed dashboard powered by Tailwind CSS.
+
+26
+00:02:19,869 --> 00:02:22,855
+Everything self-hosted, fully under your control.
+
+27
+00:02:23,770 --> 00:02:25,467
+The numbers speak for themselves.
+
+28
+00:02:25,467 --> 00:02:37,203
+Nineteen thousand lines of production code, two hundred forty three functions, twenty three API endpoints, nine social platforms, six aspect ratios, and five thousand plus taglines ready to go.
+
+29
+00:02:38,106 --> 00:02:40,116
+Here's the complete workflow in action.
+
+30
+00:02:40,116 --> 00:02:46,516
+Configure once: set your video source, choose your style, enable AI features, select platforms.
+
+31
+00:02:46,516 --> 00:02:47,477
+Then hit start.
+
+32
+00:02:47,477 --> 00:02:54,421
+The engine fetches, processes, brands, captions, and posts, all automatically, every single time.
+
+33
+00:02:55,322 --> 00:02:57,760
+Ready to automate your entire video pipeline?
+
+34
+00:02:57,760 --> 00:03:02,644
+Video Workflow Manager is your all-in-one solution for content automation at scale.
+
+35
+00:03:02,644 --> 00:03:07,783
+Self-hosted, fully customizable, and built to save you hours every single day.
+
+36
+00:03:07,783 --> 00:03:08,802
+Let's get started.
+

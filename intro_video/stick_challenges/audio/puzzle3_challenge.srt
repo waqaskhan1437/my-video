@@ -1,0 +1,16 @@
+1
+00:00:00,050 --> 00:00:01,880
+Three plus three equals eight?
+
+2
+00:00:01,880 --> 00:00:02,666
+No way!
+
+3
+00:00:02,666 --> 00:00:05,869
+Can you move just one matchstick to make this equation true?
+
+4
+00:00:05,869 --> 00:00:07,404
+10 seconds on the clock!
+

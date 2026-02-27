@@ -1,0 +1,12 @@
+1
+00:00:00,050 --> 00:00:01,423
+Set it and forget it.
+
+2
+00:00:01,423 --> 00:00:06,400
+Schedule automations to run every few minutes, hourly, daily, or weekly.
+
+3
+00:00:06,400 --> 00:00:13,229
+The built-in cron system handles everything with live progress tracking, detailed logs, and automatic error recovery.
+

@@ -1,0 +1,8 @@
+1
+00:00:00,050 --> 00:00:08,761
+Every day, content creators waste hours downloading videos, editing them into shorts, writing captions, and manually posting to every platform.
+
+2
+00:00:08,761 --> 00:00:11,023
+It's exhausting and it doesn't scale.
+

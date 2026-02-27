@@ -1,0 +1,16 @@
+1
+00:00:00,050 --> 00:00:02,559
+Ready to automate your entire video pipeline?
+
+2
+00:00:02,559 --> 00:00:04,178
+Video Workflow Manager.
+
+3
+00:00:04,178 --> 00:00:09,297
+Self-hosted, fully customizable, built to save you hours every single day.
+
+4
+00:00:09,297 --> 00:00:10,345
+Let's get started.
+

@@ -1,0 +1,16 @@
+1
+00:00:00,050 --> 00:00:01,869
+One plus one equals three?
+
+2
+00:00:01,869 --> 00:00:03,059
+Something's not right!
+
+3
+00:00:03,059 --> 00:00:05,440
+Move exactly one stick to fix this.
+
+4
+00:00:05,440 --> 00:00:08,202
+The clock starts now, you have 10 seconds!
+

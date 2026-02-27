@@ -1,0 +1,3 @@
+file 'C:\Users\Salman Akbar\Downloads\video-workflow-edit-enabled\intro_video\islamic_quiz_urdu\audio\q05_q.mp3'
+file 'C:\Users\Salman Akbar\Downloads\video-workflow-edit-enabled\intro_video\islamic_quiz_urdu\silence_10s.mp3'
+file 'C:\Users\Salman Akbar\Downloads\video-workflow-edit-enabled\intro_video\islamic_quiz_urdu\audio\q05_a.mp3'

@@ -1,0 +1,8 @@
+1
+00:00:00,050 --> 00:00:02,285
+Introducing Video Workflow Manager.
+
+2
+00:00:02,285 --> 00:00:06,107
+The all-in-one automation engine that handles everything for you.
+

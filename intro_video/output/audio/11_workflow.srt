@@ -1,0 +1,16 @@
+1
+00:00:00,050 --> 00:00:02,060
+Here's the complete workflow in action.
+
+2
+00:00:02,060 --> 00:00:08,460
+Configure once: set your video source, choose your style, enable AI features, select platforms.
+
+3
+00:00:08,460 --> 00:00:09,421
+Then hit start.
+
+4
+00:00:09,421 --> 00:00:16,365
+The engine fetches, processes, brands, captions, and posts, all automatically, every single time.
+

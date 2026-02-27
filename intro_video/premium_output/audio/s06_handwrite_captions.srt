@@ -1,0 +1,12 @@
+1
+00:00:00,050 --> 00:00:02,690
+Step three: AI-powered captions.
+
+2
+00:00:02,690 --> 00:00:07,619
+OpenAI Whisper transcribes in over twenty languages with word-level timestamps.
+
+3
+00:00:07,619 --> 00:00:10,523
+Subtitles are burned directly into your videos.
+

@@ -1,0 +1,12 @@
+1
+00:00:00,050 --> 00:00:00,809
+Time's up!
+
+2
+00:00:00,809 --> 00:00:06,071
+The answer is: move one stick from the six to make it an eight, and change the plus to a minus.
+
+3
+00:00:06,071 --> 00:00:08,083
+Eight minus four equals four!
+

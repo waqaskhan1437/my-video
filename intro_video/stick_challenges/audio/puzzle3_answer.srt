@@ -1,0 +1,16 @@
+1
+00:00:00,050 --> 00:00:01,166
+Here's the solution!
+
+2
+00:00:01,166 --> 00:00:04,190
+Move one stick from the second three to make it a five.
+
+3
+00:00:04,190 --> 00:00:06,154
+Three plus five equals eight!
+
+4
+00:00:06,154 --> 00:00:07,035
+Did you get it?
+

@@ -1,0 +1,12 @@
+1
+00:00:00,050 --> 00:00:02,141
+Built with battle-tested technology.
+
+2
+00:00:02,141 --> 00:00:13,078
+PHP backend running on XAMPP, MySQL database with auto-migration, FFmpeg for video processing, and a modern dark-themed dashboard powered by Tailwind CSS.
+
+3
+00:00:13,078 --> 00:00:16,064
+Everything self-hosted, fully under your control.
+

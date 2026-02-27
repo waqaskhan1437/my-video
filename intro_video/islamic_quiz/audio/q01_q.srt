@@ -1,0 +1,12 @@
+1
+00:00:00,100 --> 00:00:03,612
+Aaj ka sawal hai: Quran Majeed mein kitni Suratein hain?
+
+2
+00:00:03,562 --> 00:00:05,525
+Kya aap jante hain?
+
+3
+00:00:05,525 --> 00:00:07,825
+das second mein jawab dein!
+

@@ -1,0 +1,12 @@
+1
+00:00:00,050 --> 00:00:04,035
+The answer is: move one stick on the two to turn it into a six!
+
+2
+00:00:04,035 --> 00:00:06,273
+Nine minus three equals six!
+
+3
+00:00:06,273 --> 00:00:09,190
+Thanks for playing, follow for more puzzle challenges!
+

@@ -1,0 +1,3 @@
+file 'C:\Users\Salman Akbar\Downloads\video-workflow-edit-enabled\intro_video\stick_challenges\audio\puzzle5_challenge.mp3'
+file 'C:\Users\Salman Akbar\Downloads\video-workflow-edit-enabled\intro_video\stick_challenges\silence_10s.mp3'
+file 'C:\Users\Salman Akbar\Downloads\video-workflow-edit-enabled\intro_video\stick_challenges\audio\puzzle5_answer.mp3'

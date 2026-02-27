@@ -1,0 +1,16 @@
+1
+00:00:00,050 --> 00:00:01,452
+Simple but tricky!
+
+2
+00:00:01,452 --> 00:00:04,345
+Just move one stick on the three to turn it into a two.
+
+3
+00:00:04,345 --> 00:00:06,202
+One plus one equals two!
+
+4
+00:00:06,202 --> 00:00:08,464
+Sometimes the simplest answer is correct!
+

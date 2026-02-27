@@ -1,0 +1,8 @@
+1
+00:00:00,050 --> 00:00:04,016
+Auto-generate captions in over twenty languages with OpenAI Whisper.
+
+2
+00:00:04,016 --> 00:00:10,868
+Word-level timestamps ensure perfectly synced subtitles that are burned directly into your videos for maximum engagement.
+

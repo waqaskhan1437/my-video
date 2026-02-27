@@ -1,0 +1,8 @@
+1
+00:00:00,050 --> 00:00:01,747
+The numbers speak for themselves.
+
+2
+00:00:01,747 --> 00:00:13,483
+Nineteen thousand lines of production code, two hundred forty three functions, twenty three API endpoints, nine social platforms, six aspect ratios, and five thousand plus taglines ready to go.
+

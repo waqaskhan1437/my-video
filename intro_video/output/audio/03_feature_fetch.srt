@@ -1,0 +1,12 @@
+1
+00:00:00,050 --> 00:00:01,724
+Connect any video source.
+
+2
+00:00:01,724 --> 00:00:05,625
+Bunny CDN, FTP servers, or any cloud storage.
+
+3
+00:00:05,625 --> 00:00:12,418
+The system fetches your videos automatically with smart date filtering and rotation to ensure every video gets processed.
+

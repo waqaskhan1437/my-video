@@ -1,0 +1,16 @@
+1
+00:00:00,050 --> 00:00:02,361
+FFmpeg powers the video engine.
+
+2
+00:00:02,361 --> 00:00:10,335
+Convert any video into six different aspect ratios: vertical for Shorts and Reels, square for feeds, or widescreen.
+
+3
+00:00:10,335 --> 00:00:11,956
+Choose crop or fit mode.
+
+4
+00:00:11,956 --> 00:00:16,712
+Set custom durations and let the smart segment selector find the best starting point.
+

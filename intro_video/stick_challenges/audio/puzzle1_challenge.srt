@@ -1,0 +1,20 @@
+1
+00:00:00,050 --> 00:00:02,761
+Can you fix this equation by moving just one stick?
+
+2
+00:00:02,761 --> 00:00:04,511
+Six plus four equals four.
+
+3
+00:00:04,511 --> 00:00:05,380
+That's wrong!
+
+4
+00:00:05,380 --> 00:00:06,773
+You have 10 seconds.
+
+5
+00:00:06,773 --> 00:00:07,809
+Think carefully!
+

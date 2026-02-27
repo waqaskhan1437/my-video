@@ -1,0 +1,20 @@
+1
+00:00:00,050 --> 00:00:01,154
+Last challenge!
+
+2
+00:00:01,154 --> 00:00:02,940
+Nine minus three equals two?
+
+3
+00:00:02,940 --> 00:00:04,321
+That's definitely wrong!
+
+4
+00:00:04,321 --> 00:00:06,142
+Move one stick to make it right.
+
+5
+00:00:06,142 --> 00:00:07,690
+Final 10 seconds, go!
+

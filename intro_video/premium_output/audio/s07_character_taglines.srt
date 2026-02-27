@@ -1,0 +1,12 @@
+1
+00:00:00,050 --> 00:00:02,666
+Step four: Never run out of taglines.
+
+2
+00:00:02,666 --> 00:00:07,428
+Google Gemini or OpenAI generates unique text for every video.
+
+3
+00:00:07,428 --> 00:00:11,619
+Plus five thousand built-in viral taglines with emoji overlays.
+

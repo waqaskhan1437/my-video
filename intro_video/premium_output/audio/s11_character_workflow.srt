@@ -1,0 +1,12 @@
+1
+00:00:00,050 --> 00:00:01,119
+Here's the magic.
+
+2
+00:00:01,119 --> 00:00:08,369
+Configure once, set your video source, choose your style, enable AI features, select platforms, hit start.
+
+3
+00:00:08,369 --> 00:00:11,392
+The engine runs automatically, every single time.
+

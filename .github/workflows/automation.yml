@@ -56,20 +56,47 @@ jobs:
           cat automation_config.json | tee -a logs/automation_run_${{ github.run_id }}.log
 
       - name: Run automation logic
+        continue-on-error: true
+        id: run_automation
         run: |
           echo "Starting automation execution..." | tee -a logs/automation_run_${{ github.run_id }}.log
 
           # Run the automation PHP script with configuration
-          curl -X POST "${{ secrets.WORKFLOW_API_ENDPOINT }}/api/github-run-automation.php" \
+          RESPONSE=$(curl -X POST "${{ secrets.WORKFLOW_API_ENDPOINT }}/api/github-run-automation.php" \
             -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
             -H "Content-Type: application/json" \
             -d @automation_config.json \
             --max-time 14400 \
             --connect-timeout 60 \
             --retry 2 \
-            -v 2>&1 | tee -a logs/automation_run_${{ github.run_id }}.log
+            -w "\n%{http_code}" \
+            -v 2>&1)
 
-          echo "Automation execution completed" | tee -a logs/automation_run_${{ github.run_id }}.log
+          # Extract HTTP code (last line)
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "$BODY" | tee -a logs/automation_run_${{ github.run_id }}.log
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ Automation failed with HTTP $HTTP_CODE" | tee -a logs/automation_run_${{ github.run_id }}.log
+
+            # Log error back to API for real-time dashboard update
+            curl -X POST "${{ secrets.WORKFLOW_API_ENDPOINT }}/api/log-automation-error.php" \
+              -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "automation_id": "${{ inputs.automation_id }}",
+                "step": "automation_execution",
+                "severity": "error",
+                "message": "GitHub workflow failed with HTTP '${HTTP_CODE}'",
+                "progress_percent": 50
+              }' || true
+
+            exit 1
+          fi
+
+          echo "✅ Automation execution completed" | tee -a logs/automation_run_${{ github.run_id }}.log
 
       - name: Download results from API
         if: always()
@@ -85,7 +112,7 @@ jobs:
 
       - name: Upload logs
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: automation-logs-${{ github.run_id }}
           path: logs/
@@ -93,7 +120,7 @@ jobs:
 
       - name: Upload processed videos
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: automation-videos-${{ github.run_id }}
           path: processed/
@@ -102,7 +129,7 @@ jobs:
 
       - name: Upload transcriptions
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: automation-transcriptions-${{ github.run_id }}
           path: transcriptions/

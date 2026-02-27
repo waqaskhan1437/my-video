@@ -1,0 +1,8 @@
+1
+00:00:00,050 --> 00:00:02,222
+Introducing Video Workflow Manager.
+
+2
+00:00:02,222 --> 00:00:11,273
+A powerful automation engine that fetches your videos, converts them into branded shorts with AI captions and taglines, and posts them everywhere, automatically.
+

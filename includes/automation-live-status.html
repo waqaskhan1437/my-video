@@ -1,0 +1,144 @@
+<!-- Live Automation Status Widget -->
+<div id="automation-live-status" class="hidden fixed bottom-4 right-4 w-96 bg-gray-900 border border-blue-500/50 rounded-lg shadow-2xl z-50" style="max-height: 500px; overflow-y: auto;">
+    <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span class="font-bold">Live Status</span>
+        </div>
+        <button onclick="document.getElementById('automation-live-status').classList.add('hidden')" class="text-gray-300 hover:text-white">✕</button>
+    </div>
+
+    <div class="p-4 space-y-3">
+        <!-- Automation Name -->
+        <div>
+            <div class="text-xs text-gray-400">AUTOMATION</div>
+            <div id="live-automation-name" class="font-semibold text-white">-</div>
+        </div>
+
+        <!-- Status -->
+        <div>
+            <div class="text-xs text-gray-400">STATUS</div>
+            <div id="live-status" class="font-semibold">
+                <span id="live-status-badge" class="px-2 py-1 rounded text-xs bg-yellow-500/20 text-yellow-400">Idle</span>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div>
+            <div class="flex justify-between text-xs text-gray-400 mb-1">
+                <span>Progress</span>
+                <span id="live-progress-percent">0%</span>
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                <div id="live-progress-bar" class="bg-blue-500 h-full rounded-full" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Current Step -->
+        <div id="live-step-container" class="hidden">
+            <div class="text-xs text-gray-400">CURRENT STEP</div>
+            <div id="live-step" class="text-sm text-blue-300 bg-blue-900/30 px-2 py-1 rounded">-</div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="live-error-container" class="hidden">
+            <div class="text-xs text-gray-400">ERROR</div>
+            <div id="live-error" class="text-sm text-red-300 bg-red-900/30 px-2 py-1 rounded max-h-24 overflow-y-auto">-</div>
+        </div>
+
+        <!-- Last Update -->
+        <div class="text-xs text-gray-500">
+            Updated: <span id="live-last-update">just now</span>
+        </div>
+
+        <!-- GitHub Link (if applicable) -->
+        <div id="live-github-container" class="hidden">
+            <a id="live-github-link" href="#" target="_blank" class="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v 3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                View on GitHub
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-update live status every 2 seconds
+let autoStatusInterval = null;
+
+function showLiveStatus(automationId) {
+    const statusWidget = document.getElementById('automation-live-status');
+    statusWidget.classList.remove('hidden');
+
+    // Start auto-updating
+    if (autoStatusInterval) clearInterval(autoStatusInterval);
+    autoStatusInterval = setInterval(() => updateLiveStatus(automationId), 2000);
+
+    // Initial update
+    updateLiveStatus(automationId);
+}
+
+function updateLiveStatus(automationId) {
+    fetch(`/video-workflow-edit-enabled/api/get-automation-live-status.php?automation_id=${automationId}`)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.automation_id) return;
+
+            // Update automation name
+            document.getElementById('live-automation-name').textContent = data.automation_name;
+
+            // Update status badge
+            const statusBadge = document.getElementById('live-status-badge');
+            const statusMap = {
+                'idle': { bg: 'bg-gray-500/20', text: 'text-gray-400', label: 'Idle' },
+                'processing': { bg: 'bg-blue-500/20', text: 'text-blue-400', label: '⏱ Processing' },
+                'completed': { bg: 'bg-green-500/20', text: 'text-green-400', label: '✅ Completed' },
+                'error': { bg: 'bg-red-500/20', text: 'text-red-400', label: '❌ Error' }
+            };
+            const status = statusMap[data.status] || statusMap['idle'];
+            statusBadge.className = `px-2 py-1 rounded text-xs ${status.bg} ${status.text}`;
+            statusBadge.textContent = status.label;
+
+            // Update progress
+            document.getElementById('live-progress-percent').textContent = data.progress_percent + '%';
+            document.getElementById('live-progress-bar').style.width = data.progress_percent + '%';
+
+            // Update step if available
+            if (data.progress_details && data.progress_details.step) {
+                document.getElementById('live-step-container').classList.remove('hidden');
+                document.getElementById('live-step').textContent = data.progress_details.step;
+            }
+
+            // Update error if available
+            if (data.last_error) {
+                document.getElementById('live-error-container').classList.remove('hidden');
+                document.getElementById('live-error').textContent = data.last_error;
+            } else {
+                document.getElementById('live-error-container').classList.add('hidden');
+            }
+
+            // Update GitHub link if available
+            if (data.github_enabled && data.github_info) {
+                document.getElementById('live-github-container').classList.remove('hidden');
+                document.getElementById('live-github-link').href = data.github_info.url;
+            }
+
+            // Update last update time
+            const now = new Date();
+            const lastUpdate = new Date(data.last_progress_time || now);
+            const diffMs = now - lastUpdate;
+            const diffSec = Math.round(diffMs / 1000);
+            document.getElementById('live-last-update').textContent = diffSec < 60 ? `${diffSec}s ago` : '1m ago';
+
+            // Hide status if completed
+            if (data.status !== 'processing' && autoStatusInterval) {
+                clearInterval(autoStatusInterval);
+            }
+        })
+        .catch(err => console.log('Live status error:', err));
+}
+
+// Stop live updates when widget is hidden
+function stopLiveStatus() {
+    if (autoStatusInterval) clearInterval(autoStatusInterval);
+}
+</script>
