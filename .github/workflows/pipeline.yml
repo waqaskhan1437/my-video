@@ -1,0 +1,95 @@
+name: Google Photos to Archive
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Processing mode'
+        required: false
+        default: 'process_session'
+        type: choice
+        options:
+          - process_session
+          - sync_full
+          - process_latest
+      session_id:
+        description: 'Session ID (optional)'
+        required: false
+        type: string
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          extensions: curl, json, pdo_mysql, gd, mbstring
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg imagemagick curl
+
+      - name: Create logs directory
+        run: |
+          mkdir -p logs
+          echo "Workflow started at $(date)" > logs/archive_run_${{ github.run_id }}.log
+
+      - name: Trigger archive automation
+        run: |
+          echo "Starting archive automation..."
+
+          curl -X POST "${{ secrets.WORKFLOW_API_ENDPOINT }}/api/github-automation-trigger.php" \
+            -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "action": "archive",
+              "mode": "${{ inputs.mode }}",
+              "session_id": "${{ inputs.session_id }}",
+              "github_run_id": "${{ github.run_id }}",
+              "github_run_number": "${{ github.run_number }}",
+              "triggered_at": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+            }' \
+            --max-time 3600 \
+            --connect-timeout 30 \
+            --retry 3 \
+            -v 2>&1 | tee -a logs/archive_run_${{ github.run_id }}.log
+
+          echo "Archive automation triggered successfully" >> logs/archive_run_${{ github.run_id }}.log
+
+      - name: Check workflow completion status
+        if: always()
+        run: |
+          echo "Workflow execution completed"
+          echo "Check logs/archive_run_${{ github.run_id }}.log for details"
+
+          # Optional: Call status endpoint
+          curl -X GET "${{ secrets.WORKFLOW_API_ENDPOINT }}/api/github-automation-status.php?run_id=${{ github.run_id }}" \
+            -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            2>&1 | tee -a logs/archive_run_${{ github.run_id }}.log || true
+
+      - name: Upload logs as artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: archive-logs-${{ github.run_id }}
+          path: logs/
+          retention-days: 7
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Archive Workflow Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run ID**: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Mode**: ${{ inputs.mode }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Session ID**: ${{ inputs.session_id || 'Not provided' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY

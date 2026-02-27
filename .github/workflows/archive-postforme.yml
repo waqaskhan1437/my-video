@@ -1,0 +1,115 @@
+name: Archive to PostForMe
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_mode:
+        description: 'Run mode'
+        required: false
+        default: 'run'
+        type: choice
+        options:
+          - run
+          - test
+          - dry-run
+      automation_id:
+        description: 'Automation ID'
+        required: false
+        default: 'daily_archive_accounts_a'
+        type: string
+      account_filter:
+        description: 'Account filter (comma-separated account IDs)'
+        required: false
+        type: string
+
+jobs:
+  postforme:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          extensions: curl, json, gd, mbstring
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl jq
+
+      - name: Create logs directory
+        run: |
+          mkdir -p logs
+          echo "PostForMe automation workflow started at $(date)" > logs/postforme_run_${{ github.run_id }}.log
+
+      - name: Trigger PostForMe automation
+        run: |
+          echo "Starting PostForMe automation..."
+
+          curl -X POST "${{ secrets.WORKFLOW_API_ENDPOINT }}/api/github-automation-trigger.php" \
+            -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "action": "postforme",
+              "run_mode": "${{ inputs.run_mode }}",
+              "automation_id": "${{ inputs.automation_id }}",
+              "account_filter": "${{ inputs.account_filter || '' }}",
+              "github_run_id": "${{ github.run_id }}",
+              "github_run_number": "${{ github.run_number }}",
+              "triggered_at": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+            }' \
+            --max-time 3600 \
+            --connect-timeout 30 \
+            --retry 3 \
+            -v 2>&1 | tee -a logs/postforme_run_${{ github.run_id }}.log
+
+          echo "PostForMe automation triggered successfully" >> logs/postforme_run_${{ github.run_id }}.log
+
+      - name: Log automation result
+        if: always()
+        run: |
+          echo "Checking PostForMe automation status..."
+
+          curl -X GET "${{ secrets.WORKFLOW_API_ENDPOINT }}/api/github-automation-status.php?run_id=${{ github.run_id }}&action=postforme" \
+            -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            2>&1 | tee -a logs/postforme_run_${{ github.run_id }}.log || true
+
+      - name: Upload logs as artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: postforme-logs-${{ github.run_id }}
+          path: logs/
+          retention-days: 7
+
+      - name: Success notification
+        if: success()
+        run: |
+          echo "✅ PostForMe automation completed successfully!"
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Run Mode: ${{ inputs.run_mode }}"
+
+      - name: Failure notification
+        if: failure()
+        run: |
+          echo "❌ PostForMe automation failed!"
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Check logs for details"
+          exit 1
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## PostForMe Automation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run ID**: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run Mode**: ${{ inputs.run_mode }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Automation ID**: ${{ inputs.automation_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Account Filter**: ${{ inputs.account_filter || 'None' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY

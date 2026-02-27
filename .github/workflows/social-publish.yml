@@ -1,0 +1,114 @@
+name: Archive to YouTube
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_items:
+        description: 'Maximum videos to upload'
+        required: false
+        default: '1'
+        type: string
+      privacy_status:
+        description: 'Privacy status for uploads'
+        required: false
+        default: 'public'
+        type: choice
+        options:
+          - public
+          - unlisted
+          - private
+      playlist_id:
+        description: 'YouTube playlist ID (optional)'
+        required: false
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          extensions: curl, json, gd, mbstring
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl jq
+
+      - name: Create logs directory
+        run: |
+          mkdir -p logs
+          echo "YouTube Publishing workflow started at $(date)" > logs/social_run_${{ github.run_id }}.log
+
+      - name: Trigger YouTube publishing
+        run: |
+          echo "Starting YouTube publishing workflow..."
+
+          curl -X POST "${{ secrets.WORKFLOW_API_ENDPOINT }}/api/github-automation-trigger.php" \
+            -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "action": "social",
+              "max_items": "${{ inputs.max_items }}",
+              "privacy_status": "${{ inputs.privacy_status }}",
+              "playlist_id": "${{ inputs.playlist_id || '' }}",
+              "github_run_id": "${{ github.run_id }}",
+              "github_run_number": "${{ github.run_number }}",
+              "triggered_at": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+            }' \
+            --max-time 3600 \
+            --connect-timeout 30 \
+            --retry 3 \
+            -v 2>&1 | tee -a logs/social_run_${{ github.run_id }}.log
+
+          echo "YouTube publishing triggered successfully" >> logs/social_run_${{ github.run_id }}.log
+
+      - name: Verify publish status
+        if: always()
+        run: |
+          echo "Checking YouTube publishing status..."
+
+          curl -X GET "${{ secrets.WORKFLOW_API_ENDPOINT }}/api/github-automation-status.php?run_id=${{ github.run_id }}&action=social" \
+            -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            2>&1 | tee -a logs/social_run_${{ github.run_id }}.log || true
+
+      - name: Upload logs as artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: social-logs-${{ github.run_id }}
+          path: logs/
+          retention-days: 7
+
+      - name: Success notification
+        if: success()
+        run: |
+          echo "✅ YouTube publishing workflow completed successfully!"
+          echo "Run ID: ${{ github.run_id }}"
+
+      - name: Failure notification
+        if: failure()
+        run: |
+          echo "❌ YouTube publishing workflow failed!"
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Check logs for details"
+          exit 1
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## YouTube Publishing Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run ID**: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Max Items**: ${{ inputs.max_items }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Privacy Status**: ${{ inputs.privacy_status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Playlist ID**: ${{ inputs.playlist_id || 'Not provided' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY

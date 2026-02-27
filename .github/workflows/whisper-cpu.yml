@@ -1,0 +1,179 @@
+name: Whisper CPU Job
+
+on:
+  workflow_dispatch:
+    inputs:
+      whisper_model:
+        description: 'Whisper model size'
+        required: false
+        default: 'base'
+        type: choice
+        options:
+          - tiny
+          - base
+          - small
+          - medium
+          - large
+      language:
+        description: 'Language for transcription'
+        required: false
+        default: 'auto'
+        type: string
+      runner_preference:
+        description: 'Runner type'
+        required: false
+        default: 'self-hosted'
+        type: choice
+        options:
+          - self-hosted
+          - github-hosted
+
+jobs:
+  whisper:
+    # This runs on self-hosted runners with label "whisper-cpu"
+    # If not available, falls back to github-hosted
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        runner: [self-hosted, ubuntu-latest]
+      fail-fast: true
+
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check system info
+        run: |
+          echo "=== System Information ===" | tee -a run.log
+          echo "OS: $(uname -a)" | tee -a run.log
+          echo "CPU Cores: $(nproc)" | tee -a run.log
+          echo "Memory: $(free -h | grep Mem)" | tee -a run.log
+
+          if command -v nvidia-smi &> /dev/null; then
+            echo "GPU Status: Available" | tee -a run.log
+            nvidia-smi | head -20 | tee -a run.log
+          else
+            echo "GPU Status: Not available" | tee -a run.log
+          fi
+
+      - name: Set up Python (for self-hosted)
+        if: runner.os != 'Windows'
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Check Python installation
+        run: |
+          echo "Python version:" | tee -a run.log
+          python3 --version | tee -a run.log
+          which python3 | tee -a run.log
+
+      - name: Install Whisper and dependencies
+        run: |
+          echo "Installing Whisper..." | tee -a run.log
+          pip install --upgrade pip
+          pip install openai-whisper pydub
+
+          # Check for ffmpeg
+          if command -v ffmpeg &> /dev/null; then
+            echo "ffmpeg is installed: $(ffmpeg -version | head -1)" | tee -a run.log
+          else
+            echo "Installing ffmpeg..." | tee -a run.log
+            if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+              sudo apt-get update && sudo apt-get install -y ffmpeg
+            fi
+          fi
+
+          echo "Whisper installation completed" | tee -a run.log
+
+      - name: Verify Whisper installation
+        run: |
+          echo "Verifying Whisper..." | tee -a run.log
+          whisper --version | tee -a run.log
+
+      - name: Create logs directory
+        run: |
+          mkdir -p logs
+          echo "Whisper CPU Job started at $(date)" > logs/whisper_run_${{ github.run_id }}.log
+
+      - name: Trigger Whisper transcription
+        run: |
+          echo "Starting Whisper transcription automation..." | tee -a logs/whisper_run_${{ github.run_id }}.log
+
+          curl -X POST "${{ secrets.WORKFLOW_API_ENDPOINT }}/api/github-automation-trigger.php" \
+            -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "action": "whisper",
+              "whisper_model": "${{ inputs.whisper_model }}",
+              "language": "${{ inputs.language }}",
+              "runner_preference": "${{ inputs.runner_preference }}",
+              "runner_type": "'${{ runner.os }}'",
+              "runner_name": "'${{ runner.name }}'",
+              "github_run_id": "${{ github.run_id }}",
+              "github_run_number": "${{ github.run_number }}",
+              "triggered_at": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+            }' \
+            --max-time 7200 \
+            --connect-timeout 30 \
+            --retry 3 \
+            -v 2>&1 | tee -a logs/whisper_run_${{ github.run_id }}.log
+
+          echo "Whisper transcription triggered successfully" | tee -a logs/whisper_run_${{ github.run_id }}.log
+
+      - name: Check transcription status
+        if: always()
+        run: |
+          echo "Checking Whisper transcription status..." | tee -a logs/whisper_run_${{ github.run_id }}.log
+
+          curl -X GET "${{ secrets.WORKFLOW_API_ENDPOINT }}/api/github-automation-status.php?run_id=${{ github.run_id }}&action=whisper" \
+            -H "Authorization: Bearer ${{ secrets.AUTOMATION_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            2>&1 | tee -a logs/whisper_run_${{ github.run_id }}.log || true
+
+      - name: Upload logs as artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: whisper-logs-${{ github.run_id }}
+          path: logs/
+          retention-days: 7
+
+      - name: Upload transcription results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: whisper-results-${{ github.run_id }}
+          path: transcriptions/
+          retention-days: 30
+        continue-on-error: true
+
+      - name: Success notification
+        if: success()
+        run: |
+          echo "✅ Whisper transcription completed successfully!"
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Model: ${{ inputs.whisper_model }}"
+          echo "Language: ${{ inputs.language }}"
+
+      - name: Failure notification
+        if: failure()
+        run: |
+          echo "❌ Whisper transcription failed!"
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Check logs for details"
+          exit 1
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Whisper CPU Job Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run ID**: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Model Size**: ${{ inputs.whisper_model }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Language**: ${{ inputs.language }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Runner Preference**: ${{ inputs.runner_preference }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Runner Type**: ${{ runner.os }} (${{ runner.name }})" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY
