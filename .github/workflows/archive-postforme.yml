@@ -1,0 +1,103 @@
+name: Archive to PostForMe Daily
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_items:
+        description: "How many archive items to process this run"
+        required: false
+        default: "1"
+      archive_prefix:
+        description: "Archive identifier prefix"
+        required: false
+        default: "gp_"
+      platforms:
+        description: "Comma-separated platform filter (e.g. instagram,facebook)"
+        required: false
+        default: ""
+      full_offset_minutes:
+        description: "Minutes from now to schedule full post"
+        required: false
+        default: "20"
+      short_offset_minutes:
+        description: "Minutes from now to schedule short post"
+        required: false
+        default: "80"
+      item_spacing_minutes:
+        description: "Minutes spacing between archive items"
+        required: false
+        default: "240"
+      dry_run:
+        description: "Create schedule without API post creation"
+        required: false
+        type: choice
+        default: "false"
+        options:
+          - "false"
+          - "true"
+  schedule:
+    - cron: "35 3 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: archive-postforme-daily
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Validate secrets
+        env:
+          POSTFORME_API_KEY: ${{ secrets.POSTFORME_API_KEY }}
+        run: |
+          if [ -z "${POSTFORME_API_KEY}" ]; then
+            echo "Missing POSTFORME_API_KEY"
+            exit 1
+          fi
+
+      - name: Run archive -> postforme automation
+        env:
+          POSTFORME_API_KEY: ${{ secrets.POSTFORME_API_KEY }}
+          POSTFORME_BASE_URL: https://api.postforme.dev/v1
+          ARCHIVE_PREFIX: ${{ inputs.archive_prefix || 'gp_' }}
+          POSTFORME_PLATFORMS: ${{ inputs.platforms || '' }}
+          MAX_ITEMS_PER_RUN: ${{ inputs.max_items || '1' }}
+          FULL_OFFSET_MINUTES: ${{ inputs.full_offset_minutes || '20' }}
+          SHORT_OFFSET_MINUTES: ${{ inputs.short_offset_minutes || '80' }}
+          ITEM_SPACING_MINUTES: ${{ inputs.item_spacing_minutes || '240' }}
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          POSTFORME_SKIP_MEDIA_PROCESSING: "false"
+        run: python scripts/archive_to_postforme.py
+
+      - name: Commit postforme state
+        run: |
+          touch postforme_state.json
+          if [ -z "$(git status --porcelain -- postforme_state.json)" ]; then
+            echo "No postforme state changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add postforme_state.json
+          git commit -m "chore: update postforme automation state"
+          git push

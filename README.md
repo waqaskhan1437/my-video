@@ -1,19 +1,23 @@
-# Google Photos -> Archive.org -> YouTube (Full + Short)
+# Google Photos -> Archive.org -> Social Automations
 
-Is repo me 2 automations hain:
+Is repo me 3 automations hain:
 
 1. Google Photos Picker se videos uthao, compress karo, Archive.org upload karo  
-2. Archive.org se same videos uthao, ek full horizontal aur ek short banao, YouTube par post karo
+2. Archive.org se same videos uthao, ek full horizontal aur ek short banao, YouTube par post karo  
+3. Archive.org se videos process karo aur PostForMe ke zariye social accounts par schedule/post karo (daily)
 
 ## Files
 
 ```text
 .github/workflows/pipeline.yml
 .github/workflows/social-publish.yml
+.github/workflows/archive-postforme.yml
 scripts/picker_pipeline.py
 scripts/social_post_pipeline.py
+scripts/archive_to_postforme.py
 processed.txt
 social_state.json
+postforme_state.json
 ```
 
 ## Flow A: Google Photos -> Archive.org
@@ -59,12 +63,43 @@ Scope for token:
    - Dono YouTube par upload karta hai
    - `social_state.json` me progress save karta hai
 
+## Flow C: Archive.org -> PostForMe (Daily)
+
+Ye flow alag hai aur YouTube flow se independent chal sakta hai.
+
+### Required GitHub secrets
+
+- `POSTFORME_API_KEY`
+
+### Run
+
+1. Actions -> `Archive to PostForMe Daily` -> `Run workflow`
+2. Inputs:
+   - `max_items` (default `1`)
+   - `archive_prefix` (default `gp_`)
+   - `platforms` (optional, comma separated, e.g. `instagram,facebook`)
+   - `full_offset_minutes` (default `20`)
+   - `short_offset_minutes` (default `80`)
+   - `item_spacing_minutes` (default `240`)
+3. Workflow:
+   - Archive se new source video fetch karta hai
+   - Full horizontal + short vertical generate karta hai
+   - Processed files PostForMe media me upload karta hai
+   - PostForMe `/social-posts` par scheduled posts create karta hai
+   - `postforme_state.json` me progress save karta hai
+
+### Daily auto-run
+
+- Is workflow me daily cron already configured hai.
+- Daily run sirf new archive items ko process karega.
+
 ## Important checks
 
 - Agar logs me `Run bash scripts/process.sh` dikhe to old flow chal raha hai.
 - Naye setup me `Run python scripts/picker_pipeline.py` aur social ke liye `Run python scripts/social_post_pipeline.py` aana chahiye.
+- PostForMe flow ke liye logs me `Run python scripts/archive_to_postforme.py` aana chahiye.
 
 ## Notes
 
 - YouTube API quota limit hoti hai; har upload quota use karta hai.
-- Social workflow currently YouTube par configured hai (full + short).
+- PostForMe automation `postforme_state.json` ki base par duplicate schedule avoid karta hai.
