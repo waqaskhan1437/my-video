@@ -2,8 +2,27 @@ name: Google Photos to Archive.org
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "10 */6 * * *"
+    inputs:
+      mode:
+        description: "Run mode"
+        required: true
+        type: choice
+        default: create_session
+        options:
+          - create_session
+          - process_session
+      session_id:
+        description: "Required for process_session"
+        required: false
+        default: ""
+      max_item_count:
+        description: "Optional limit while creating session (0 = default)"
+        required: false
+        default: "0"
+      archive_prefix:
+        description: "Archive.org identifier prefix"
+        required: false
+        default: "gp"
 
 permissions:
   contents: write
@@ -30,34 +49,52 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
           python -m pip install --upgrade pip
-          pip install yt-dlp internetarchive
+          pip install requests internetarchive
 
       - name: Prepare credentials
         env:
+          RUN_MODE: ${{ inputs.mode }}
           IA_ACCESS_KEY: ${{ secrets.IA_ACCESS_KEY }}
           IA_SECRET_KEY: ${{ secrets.IA_SECRET_KEY }}
-          GPHOTOS_COOKIES: ${{ secrets.GPHOTOS_COOKIES }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
         run: |
-          if [ -z "${IA_ACCESS_KEY}" ] || [ -z "${IA_SECRET_KEY}" ]; then
-            echo "IA_ACCESS_KEY / IA_SECRET_KEY missing."
+          if [ -z "${GOOGLE_CLIENT_ID}" ] || [ -z "${GOOGLE_CLIENT_SECRET}" ] || [ -z "${GOOGLE_REFRESH_TOKEN}" ]; then
+            echo "Missing Google OAuth secrets."
             exit 1
           fi
 
-          mkdir -p ~/.config
-          {
-            echo "[s3]"
-            echo "access = ${IA_ACCESS_KEY}"
-            echo "secret = ${IA_SECRET_KEY}"
-          } > ~/.config/ia.ini
-
-          printf "%s" "${GPHOTOS_COOKIES}" > cookies.txt
+          if [ "${RUN_MODE}" = "process_session" ]; then
+            if [ -z "${IA_ACCESS_KEY}" ] || [ -z "${IA_SECRET_KEY}" ]; then
+              echo "IA_ACCESS_KEY / IA_SECRET_KEY missing for process_session."
+              exit 1
+            fi
+            mkdir -p ~/.config
+            {
+              echo "[s3]"
+              echo "access = ${IA_ACCESS_KEY}"
+              echo "secret = ${IA_SECRET_KEY}"
+            } > ~/.config/ia.ini
+          fi
 
       - name: Run pipeline
-        run: bash scripts/process.sh
+        env:
+          RUN_MODE: ${{ inputs.mode }}
+          PICKER_SESSION_ID: ${{ inputs.session_id }}
+          PICKER_MAX_ITEM_COUNT: ${{ inputs.max_item_count }}
+          ARCHIVE_PREFIX: ${{ inputs.archive_prefix }}
+          IA_ACCESS_KEY: ${{ secrets.IA_ACCESS_KEY }}
+          IA_SECRET_KEY: ${{ secrets.IA_SECRET_KEY }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
+        run: python scripts/picker_pipeline.py
 
       - name: Commit processed state
         run: |
-          if git diff --quiet processed.txt; then
+          touch processed.txt
+          if [ -z "$(git status --porcelain -- processed.txt)" ]; then
             echo "No processed changes."
             exit 0
           fi
@@ -65,5 +102,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add processed.txt
-          git commit -m "chore: update processed links"
+          git commit -m "chore: update processed items"
           git push

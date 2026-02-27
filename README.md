@@ -1,48 +1,73 @@
-# Google Photos -> Compress -> Archive.org (Free, Server-to-Server)
+# Google Photos Picker -> Compress -> Archive.org (Free on GitHub Actions)
 
-Ye starter setup GitHub Actions par chalta hai:
+Ye setup Google Photos **shared link** par depend nahi karta.  
+Isme Google Photos Picker API use hoti hai:
 
-1. `links.txt` se Google Photos links read karta hai  
-2. `yt-dlp` se video download karta hai (runner par, local PC par nahi)  
-3. `ffmpeg` se compress karta hai  
-4. `archive.org` par `ia` CLI se upload karta hai  
-5. `processed.txt` update karke duplicate processing avoid karta hai
+1. Session create hoti hai  
+2. Aap picker URL me videos select karte ho  
+3. Workflow selected videos download + compress + archive.org upload karta hai
 
-Important:
+## Why this works
 
-- Google Photos policies/links ki wajah se direct shared links kabhi fail ho sakte hain.
-- Agar link private ho to cookies chahiye hongi.
-- Sab process GitHub runner par hota hai, aapke laptop par nahi.
-- Agar log me `Unsupported URL: https://photos.google.com/share/...` aaye to us link ko tool read nahi kar pa raha.
+- Direct `photos.app.goo.gl` links mostly automation-friendly nahi hotay.
+- Picker API official flow hai jahan user selection required hoti hai.
 
-## Google Photos link unsupported ho to kya karein
-
-1. Best reliable path: videos ko Google Drive ya kisi direct-file source me rakho, phir woh links use karo.
-2. Ya Google Photos ka manual export (Takeout/download) karke source update karo.
-3. Workflow ab summary print karta hai aur agar upload 0 ho to run fail karega (red), taake false-success na aaye.
-
-## 1) One-time setup
-
-1. GitHub par new **public** repo banao aur ye files upload karo.
-2. Archive.org account banao aur S3 keys nikaalo: `https://archive.org/account/s3.php`
-3. Repo Settings -> Secrets and variables -> Actions -> New repository secret:
-   - `IA_ACCESS_KEY`
-   - `IA_SECRET_KEY`
-   - Optional: `GPHOTOS_COOKIES` (Netscape cookies.txt format)
-4. `links.txt` me har line par 1 video link daalo.
-5. Actions tab se workflow run karo.
-
-## 2) File structure
+## Files
 
 ```text
 .github/workflows/pipeline.yml
-scripts/process.sh
-links.txt
+scripts/picker_pipeline.py
 processed.txt
 ```
 
-## 3) Notes
+## Migration check (important)
 
-- Public repo me standard GitHub-hosted runners free hote hain.
-- Ek job max 6 ghante chal sakti hai.
-- Bohat bari files/batch ho to links ko chunks me daalo.
+- Agar run logs me `Run bash scripts/process.sh` dikhe, to aap abhi old workflow chala rahe ho.
+- Naye setup me logs me `Run python scripts/picker_pipeline.py` aana chahiye.
+
+## One-time setup
+
+1. Archive.org account me S3 keys banao: `https://archive.org/account/s3.php`
+2. Google Cloud me project banao.
+3. Google Photos Picker API enable karo.
+4. OAuth consent screen configure karo (test user me apna Gmail add karo).
+5. OAuth client credentials banao (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`).
+6. Refresh token lo (scope: `https://www.googleapis.com/auth/photospicker.mediaitems.readonly`).
+   - Easy method: OAuth Playground with your own client credentials.
+
+## GitHub Secrets
+
+Repo -> Settings -> Secrets and variables -> Actions:
+
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `GOOGLE_REFRESH_TOKEN`
+- `IA_ACCESS_KEY`
+- `IA_SECRET_KEY`
+
+## Run flow
+
+### Step A: Create picker session
+
+1. Actions -> `Google Photos to Archive.org` -> `Run workflow`
+2. `mode` = `create_session`
+3. Run logs/summary se `Session ID` aur `Picker URL` copy karo
+4. Picker URL kholo, videos select karo, `Done` karo
+
+### Step B: Process selected videos
+
+1. Same workflow dubara run karo
+2. `mode` = `process_session`
+3. `session_id` me Step A wala session id paste karo
+4. Workflow:
+   - selected videos download karega
+   - ffmpeg se compress karega
+   - archive.org par upload karega
+   - `processed.txt` me processed item IDs save karega
+
+## Notes
+
+- Process session run me `IA_*` secrets required hain.
+- Agar selected item video nahi hai to skip hoga.
+- Agar attempts hue lekin upload 0 raha, run fail (red) karega.
+- Session ID agar `sessions/...` form me ho to bhi script usay handle kar leti hai.
